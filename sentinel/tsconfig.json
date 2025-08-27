@@ -2,6 +2,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "@lynx-js/react",
+    "lib": ["dom", "es2020"],
 
     "module": "node18",
     "moduleResolution": "node16",
@@ -12,6 +13,10 @@
 
     "esModuleInterop": true,
     "skipLibCheck": true,
+
+    "allowJs": true,
+    "outDir": "./dist",
   },
   "exclude": ["dist/"],
+  "include": ["src"],
 }

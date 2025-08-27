@@ -1,119 +1,194 @@
-:root {
-  background-color: #000;
-  --color-text: #fff;
+/* ================================
+   TikTok-inspired theme
+   ================================ */
+:root{
+  /* TikTok palette */
+  --bg: #0c0d0f;             /* app background (near-black) */
+  --surface: #121318;        /* cards */
+  --surface-2: #171922;
+  --border: #23242b;
+  --text: #ffffff;
+  --muted: #a8adbb;
+
+  --accent-pink: #fe2c55;    /* TikTok red/pink */
+  --accent-cyan: #25f4ee;    /* TikTok cyan */
+  --accent-yellow: #ffd166;  /* helper for meter */
+
+  --focus: rgba(37, 244, 238, 0.5);
 }
 
-.Background {
-  position: fixed;
-  background: radial-gradient(
-    71.43% 62.3% at 46.43% 36.43%,
-    rgba(18, 229, 229, 0) 15%,
-    rgba(239, 155, 255, 0.3) 56.35%,
-    #ff6448 100%
-  );
-  box-shadow: 0px 12.93px 28.74px 0px #ffd28db2 inset;
-  border-radius: 50%;
-  width: 200vw;
-  height: 200vw;
-  top: -60vw;
-  left: -14.27vw;
-  transform: rotate(15.25deg);
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }
 
-.App {
+.app-root { min-height: 100dvh; display: flex; flex-direction: column; }
+
+/* Top bar */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background:
+    radial-gradient(80% 120% at 110% -10%, rgba(254,44,85,0.12), transparent 50%),
+    radial-gradient(80% 120% at -10% 110%, rgba(37,244,238,0.12), transparent 50%),
+    var(--bg);
+}
+
+/* “TikTok offset” brand lockup */
+.brand {
   position: relative;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-text {
-  color: var(--color-text);
-}
-
-.Banner {
-  flex: 5;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-.Logo {
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 8px;
-}
-
-.Logo--react {
-  width: 100px;
-  height: 100px;
-  animation: Logo--spin infinite 20s linear;
-}
-
-.Logo--lynx {
-  width: 100px;
-  height: 100px;
-  animation: Logo--shake infinite 0.5s ease;
-}
-
-@keyframes Logo--spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes Logo--shake {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(0.9);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.Content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.Arrow {
-  width: 24px;
-  height: 24px;
-}
-
-.Title {
-  font-size: 36px;
-  font-weight: 700;
-}
-
-.Subtitle {
-  font-style: italic;
+  font-weight: 900;
   font-size: 22px;
-  font-weight: 600;
-  margin-bottom: 8px;
+  letter-spacing: 0.4px;
+  line-height: 1;
+}
+.brand-shadow {
+  position: absolute;
+  inset: 0;
+  transform: translate(2px, 2px);
+  color: var(--accent-cyan);
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.9;
+  filter: blur(0.2px);
+}
+.brand-ink {
+  position: relative;
+  color: var(--accent-pink);
+  text-shadow:
+    0 0 12px rgba(254,44,85,0.45),
+    0 0 24px rgba(37,244,238,0.25);
 }
 
-.Description {
-  font-size: 20px;
-  color: rgba(255, 255, 255, 0.85);
-  margin: 15rpx;
+/* Layout */
+.container { max-width: 1160px; margin: 0 auto; padding: 18px 20px 32px; width: 100%; }
+.row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+.col { flex: 1 1 0; min-width: 320px; }
+.spacer { height: 12px; }
+
+/* Cards */
+.card {
+  background: linear-gradient(180deg, var(--surface), var(--surface-2));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255,255,255,0.01) inset;
+}
+.card.center { text-align: center; }
+
+/* Buttons */
+.btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: #1a1c25;
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform .04s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+}
+.btn:hover { border-color: #2e3040; transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn:focus-visible { outline: 0; box-shadow: 0 0 0 3px var(--focus); }
+
+.btn-primary {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--accent-pink), var(--accent-cyan));
+  color: #0b0d12;
+}
+.btn-warn {
+  border-color: transparent;
+  background: linear-gradient(135deg, #ff6b6b, #ff8a3d);
+  color: #0b0d12;
+}
+.btn-ghost {
+  background: transparent;
+  border-color: var(--border);
 }
 
-.Hint {
-  font-size: 12px;
-  margin: 5px;
-  color: rgba(255, 255, 255, 0.65);
+/* Utility */
+.pill { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); background: #0f1117; font-size: 12px; }
+.small { font-size: 12px; }
+.muted { color: var(--muted); }
+.link { color: #9cb7ff; text-decoration: none; border-bottom: 1px dashed #9cb7ff40; }
+/* Text utilities */
+.fs-18 { font-size: 18px; }
+.fs-16 { font-size: 16px; }
+.fs-14 { font-size: 14px; }
+
+.fw-700 { font-weight: 700; }
+.fw-600 { font-weight: 600; }
+
+/* Inputs */
+.input, .textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #0f1117;
+  color: var(--text);
 }
+.input:focus-visible, .textarea:focus-visible { outline: 0; box-shadow: 0 0 0 3px var(--focus); }
+.textarea { min-height: 120px; resize: vertical; }
+
+/* Dropzone */
+.dropzone {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 160px;
+  border: 2px dashed var(--border);
+  border-radius: 14px;
+  background: #0f1117;
+  cursor: pointer;
+  text-align: center;
+  padding: 16px;
+}
+
+/* Results & grid */
+.result-item { padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #0f1117; }
+.grid { display: grid; gap: 12px; }
+.grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* Danger meter */
+.danger-meter { height: 12px; background:#0f1117; border:1px solid var(--border); border-radius:999px; overflow:hidden; }
+.danger-fill {
+  height: 100%;
+  width: 0%;
+  transition: width .6s ease;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-yellow), var(--accent-pink));
+}
+
+/* Veil (busy overlay) */
+.veil {
+  position: fixed; inset: 0; display: grid; place-items: center;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(2px);
+  z-index: 20;
+}
+.spinner {
+  width: 32px; height: 32px; border-radius: 999px;
+  border: 3px solid var(--border); border-top-color: var(--accent-cyan);
+  margin: 0 auto 10px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg) } }
+
+/* Footer */
+.footer { padding: 18px 20px 28px; text-align: center; border-top: 1px solid var(--border); background: #0b0d12; }
+
+/* Topbar right controls */
+.topbar-controls { display: flex; gap: 10px; align-items: center; }

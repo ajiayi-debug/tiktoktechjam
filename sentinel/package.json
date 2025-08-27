@@ -12,7 +12,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@lynx-js/react": "^0.112.4"
+    "@lynx-js/react": "^0.112.4",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
   },
   "devDependencies": {
     "@biomejs/biome": "2.1.3",
@@ -24,7 +26,7 @@
     "@lynx-js/types": "3.3.0",
     "@rsbuild/plugin-type-check": "1.2.4",
     "@testing-library/jest-dom": "^6.8.0",
-    "@types/react": "^18.3.23",
+    "@types/react": "^18.3.24",
     "eslint": "^9.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
