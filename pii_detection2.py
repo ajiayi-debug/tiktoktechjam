@@ -62,7 +62,7 @@ class PIIDetectionAgent:
                 'description': 'Credit card number', 'risk': 'high'
             },
             'address_postal_standalone': {
-                'pattern': r'\b\d{6}\b',
+                'pattern': r'\b\d{3}\s?\d{3}\b',
                 'description': 'Standalone Postal Code', 'risk': 'medium'
             },
             'address_street_name': {
