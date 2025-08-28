@@ -1,5 +1,5 @@
 import { useState } from '@lynx-js/react'
-import type { DangerScore } from '../types.ts'
+import type { DangerScore } from '../types.js'
 
 export default function DangerMeter({ score }: { score: DangerScore | null }) {
   const [open, setOpen] = useState(false)

@@ -1,6 +1,6 @@
-import type { AgentConfig, AgentId, AgentOutput, Submission, AgentTransportMode } from "../types";
-import { runMockAgents } from "./mock.ts";
-import { runHttpAgents } from "./http.ts";
+import type { AgentConfig, AgentId, AgentOutput, Submission, AgentTransportMode } from "../types.js";
+import { runMockAgents } from "./mock.js";
+import { runHttpAgents } from "./http.js";
 
 
 export class AgentRegistry {
@@ -19,7 +19,9 @@ if (raw) {
 const saved = JSON.parse(raw) as AgentConfig[];
 for (const c of saved) this.configs[c.id] = { ...this.configs[c.id], ...c };
 }
-} catch {}
+} catch {
+  // Ignore errors: localStorage may be unavailable or data may be malformed
+}
 }
 
 

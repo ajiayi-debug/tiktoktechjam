@@ -1,4 +1,4 @@
-import type { AgentConfig, AgentOutput, Submission } from "../types.ts";
+import type { AgentConfig, AgentFinding, AgentOutput, Submission } from "../types.js";
 
 
 function delay(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
@@ -23,21 +23,29 @@ outs.push({ agent: a.id, findings, stats: { leaks: findings.length } });
 
 if (a.id === "reverse-image") {
 const matches = submission.media.length ? Math.floor(Math.random() * 4) : 0;
-const findings = new Array(matches).fill(0).map((_, i) => ({
-id: id("f"), agent: a.id,
-title: `Image match #${i + 1} on forum`, severity: i === 0 ? "high" : "low",
-url: "https://imageboard.tld/thread/123"
+const findings: AgentFinding[] = new Array(matches).fill(0).map((_, i) => ({
+  id: id("f"),
+  agent: a.id,
+  title: `Image match #${i + 1} on forum`,
+  severity: (i === 0 ? "high" : "low") as "low" | "medium" | "high",
+  url: "https://imageboard.tld/thread/123"
 }));
 outs.push({ agent: a.id, findings, stats: { matches } });
 }
 
 
 if (a.id === "redaction") {
-const hasMedia = submission.media.length > 0;
-const findings = hasMedia ? [
-{ id: id("f"), agent: a.id, title: "Detected car plate in frame", severity: "high", description: "Plate: SGP1234A" },
-] : [];
-outs.push({ agent: a.id, findings, stats: { redactions: findings.length } });
+  const hasMedia = submission.media.length > 0;
+  const findings = hasMedia ? [
+    {
+      id: id("f"),
+      agent: a.id,
+      title: "Detected car plate in frame",
+      severity: "high" as "high" | "low" | "medium",
+      description: "Plate: SGP1234A"
+    }
+  ] : [];
+  outs.push({ agent: a.id, findings, stats: { redactions: findings.length } });
 }
 }
 return outs;

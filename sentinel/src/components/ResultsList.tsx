@@ -1,8 +1,21 @@
 import { useCallback } from '@lynx-js/react'
-import type { AgentOutput } from '../types.ts'
+import type { AgentOutput } from '../types.js'
+
+function severityBg(sev: 'low' | 'medium' | 'high'): string {
+  if (sev === 'high') return '#2a0f12'
+  if (sev === 'medium') return '#2a2512'
+  return '#0f1f2a'
+}
 
 export default function ResultsList({ outputs }: { outputs: AgentOutput[] }) {
-  const openLink = useCallback((url: string) => { 'background only'; try { window.open(url, '_blank') } catch { location.href = url } }, [])
+  const openLink = useCallback((url: string) => {
+    'background only'
+    try {
+      window.open(url, '_blank')
+    } catch {
+      location.href = url
+    }
+  }, [])
 
   return (
     <view className="card">
@@ -18,9 +31,12 @@ export default function ResultsList({ outputs }: { outputs: AgentOutput[] }) {
                 {o.agent === 'reverse-image' && 'Agent 2 – Reverse Image Search'}
                 {o.agent === 'redaction' && 'Agent 3 – Redaction & Warning'}
               </text>
+
               {o.stats && (
                 <view className="pill" style={{ marginLeft: 'auto' }}>
-                  <text>{Object.entries(o.stats).map(([k, v]) => `${k}: ${v}`).join(' · ')}</text>
+                  <text>
+                    {Object.entries(o.stats).map(([k, v]) => `${k}: ${v}`).join(' · ')}
+                  </text>
                 </view>
               )}
             </view>
@@ -29,27 +45,36 @@ export default function ResultsList({ outputs }: { outputs: AgentOutput[] }) {
               <text className="muted small">No findings.</text>
             ) : (
               <view className="grid">
-                {o.findings.map((f) => (
-                  <view className="result-item" key={f.id}>
-                    <view className="row" style={{ alignItems: 'center' }}>
-                      <view
-                        className="pill"
-                        style={{ background: f.severity === 'high' ? '#2a0f12' : f.severity === 'medium' ? '#2a2512' : '#0f1f2a', borderColor: '#2b3b52' }}
-                      >
-                        <text>{f.severity.toUpperCase()}</text>
-                      </view>
-                      <text className="fw-600" style={{ marginLeft: 8 }}>{f.title}</text>
-
-                      {f.url && (
-                        <view className="link small" style={{ marginLeft: 'auto' }} bindtap={() => openLink(f.url!)}>
-                          <text>Open</text>
+                {o.findings.map((f) => {
+                  const bg = severityBg(f.severity)
+                  return (
+                    <view className="result-item" key={f.id}>
+                      <view className="row" style={{ alignItems: 'center' }}>
+                        <view className="pill" style={{ background: bg, borderColor: '#2b3b52' }}>
+                          <text>{f.severity.toUpperCase()}</text>
                         </view>
+
+                        <text className="fw-600" style={{ marginLeft: 8 }}>{f.title}</text>
+
+                        {typeof f.url === 'string' && f.url.length > 0 && (
+                          <view
+                            className="link small"
+                            style={{ marginLeft: 'auto' }}
+                            bindtap={() => openLink(f.url as string)}
+                          >
+                            <text>Open</text>
+                          </view>
+                        )}
+                      </view>
+
+                      {f.description && (
+                        <text className="small muted" style={{ marginTop: 6 }}>
+                          {f.description}
+                        </text>
                       )}
                     </view>
-
-                    {f.description && <text className="small muted" style={{ marginTop: 6 }}>{f.description}</text>}
-                  </view>
-                ))}
+                  )
+                })}
               </view>
             )}
           </view>

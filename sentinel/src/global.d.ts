@@ -1,1 +1,3 @@
-/// <reference types="@lynx-js/types" />
+import '@lynx-js/types';
+
+export {};

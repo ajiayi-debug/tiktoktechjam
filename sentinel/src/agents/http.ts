@@ -1,5 +1,5 @@
-import type { AgentConfig, AgentOutput, Submission } from "../types.ts";
-import { extractAndMaskPII } from "../lib/pii.ts";
+import type { AgentConfig, AgentOutput, Submission } from "../types.js";
+import { extractAndMaskPII } from "../lib/pii.js";
 
 
 async function postJSON<T>(url: string, body: unknown, apiKey?: string): Promise<T> {

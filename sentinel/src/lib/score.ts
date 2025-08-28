@@ -1,4 +1,4 @@
-import type { AgentOutput, DangerScore } from "../types.ts";
+import type { AgentOutput, DangerScore } from "../types.js";
 
 
 export function computeDanger(outputs: AgentOutput[]): DangerScore {

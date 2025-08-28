@@ -1,5 +1,6 @@
 import { useCallback } from '@lynx-js/react'
-import type { AgentConfig } from '../types.ts'
+import type { AgentConfig } from '../types.js'
+import { Input } from './Primitives.js'   // <-- add this
 
 export default function AgentSettings(props: {
   configs: AgentConfig[]
@@ -9,7 +10,6 @@ export default function AgentSettings(props: {
   const clear  = useCallback((cfg: AgentConfig) => { 'background only'; props.onSave({ ...cfg, baseUrl: '', apiKey: '' }) }, [props])
   const onBase = (cfg: AgentConfig, v: string) => props.onSave({ ...cfg, baseUrl: v })
   const onKey  = (cfg: AgentConfig, v: string) => props.onSave({ ...cfg, apiKey: v })
-  const onInput = (fn: (v: string) => void) => (e: any) => fn(e?.detail?.value ?? e?.currentTarget?.value ?? '')
 
   return (
     <view className="card">
@@ -33,21 +33,19 @@ export default function AgentSettings(props: {
             </view>
 
             <text className="small muted">Base URL</text>
-            <input
-              className="input"
+            <Input
+              className="input input-one-line"
               placeholder="https://agent.example.com"
               value={c.baseUrl ?? ''}
-              {...({ bindinput: onInput((v) => onBase(c, v)) } as any)}
-              onInput={onInput((v) => onBase(c, v))}
+              bindinput={(e) => onBase(c, e.detail?.value ?? '')}
             />
 
             <text className="small muted" style={{ marginTop: 6 }}>API Key (optional)</text>
-            <input
-              className="input"
+            <Input
+              className="input input-one-line"
               placeholder="sk-..."
               value={c.apiKey ?? ''}
-              {...({ bindinput: onInput((v) => onKey(c, v)) } as any)}
-              onInput={onInput((v) => onKey(c, v))}
+              bindinput={(e) => onKey(c, e.detail?.value ?? '')}
             />
 
             <view className="row" style={{ marginTop: 8 }}>
