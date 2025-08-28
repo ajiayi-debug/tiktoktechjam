@@ -1,9 +1,9 @@
 from google.adk.agents import Agent
-from google.adk.tools import google_search
+from google.adk.tools import google_search, url_context
 import os
 import certifi
 from dotenv import load_dotenv
-from prompt import WEBSEARCH, QUERY_GENERATE,EXTRACT_INFO,SYNTHESIZE
+from prompt import WEBSEARCH, QUERY_GENERATE,EXTRACT_INFO,SYNTHESIZE,EVIDENCE
 from google.adk.agents import SequentialAgent
 load_dotenv()
 
@@ -39,13 +39,23 @@ search_and_find = Agent(
     tools=[google_search],
     output_key="search_results"
 )
+
 synthesis_and_report = Agent(
     name="synthesis_and_report_agent",
-    model="gemini-1.5-pro", # Needs the best model for the final report
+    model="gemini-2.5-pro", # Needs the best model for the final report
     description="Agent that analyzes found social media profiles and generates a final privacy report.",
     instruction=SYNTHESIZE,
     output_key="final_report",
-    tools=[google_search] # It uses search to "scrape" the URLs
+    tools=[google_search] # It uses search to find the URLS and url_context to look into the URLs
+)
+
+supporting_evidence=Agent(
+    name="supporting_evidence_agent",
+    model="gemini-2.5-pro",
+    description="Agent that finds supporting evidence for the final report.",
+    instruction=EVIDENCE,
+    output_key="supporting_evidence",
+    tools=[google_search,url_context]
 )
 
 footprint_pipeline = SequentialAgent(
@@ -54,6 +64,7 @@ footprint_pipeline = SequentialAgent(
         info_extractor,
         query_generator,
         search_and_find,
-        synthesis_and_report
+        synthesis_and_report,
+        supporting_evidence
     ]
 )

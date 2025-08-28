@@ -34,7 +34,7 @@ async def call_agent_async(query):
                 final_response = event.content.parts[0].text
                 print("Agent Response: ", final_response)
                 # Save to .txt
-                with open(f"findings.txt", "w", encoding="utf-8") as f:
+                with open(f"findings.txt", "a", encoding="utf-8") as f:
                     f.write(final_response)
     except Exception as e:
         print(f"Error during agent execution: {str(e)}")
@@ -48,4 +48,4 @@ with open(description, "r", encoding="utf-8") as f:
 with open(transcript, "r", encoding="utf-8") as f:
     transcript_content = f.read()
 
-asyncio.run(call_agent_async(f"""Tik TOk username: kiwiiclaire, media description: {description_content}, transcript: {transcript_content}"""))
+asyncio.run(call_agent_async(f"""Tik Tok username: kiwiiclaire, media description: {description_content}, transcript: {transcript_content}"""))

@@ -100,17 +100,63 @@ Output your findings in this JSON format ONLY:
 input: {refined_queries}
 """
 
+# SYNTHESIZE = """
+# You are the private investigator. Your final task is to dig up as much information about the user as possible through the internet. 
+# You are given a JSON object containing social media URLs found in the previous step: {search_results}
+# You are also given the initial user information: {extracted_info}
+
+# Your instructions are:
+# 1. For each valid URL in the `social_profiles` object, use the Google Search tool to retrieve its content (e.g., search for the URL itself to get the page's text).
+# 2. From the content of each page, extract key information like: Full Name, Bio Description, Location mentioned in the profile, and recent activity/topics. GIVE EVIDENCE in the form of links (e.g link to the tik tok video of a collaboration with the individual and others)
+# 3. Correlate this information. Does the LinkedIn profile name match the name on Twitter? Does the Instagram bio mention the topics from the user's original query?
+# 4. Synthesize all your findings into a clear, structured report for the end-user, which is your colleagues who are investigating the individual. Use Markdown formatting. The report should have a risk level and a detailed write up of findings categorized by information type (Identity, Location, Professional, etc.). PLEASE INCLUDE EVIDENCE OF WEBLINKS USED.
+
+# Begin the report with "Digital Footprint Guardian: Your Privacy Analysis".
+# Structure the final output exactly like the example you have been trained on. Be detailed and explain the IMPLICATIONS of your findings.
+# """
+
+# EVIDENCE="""Find supporting evidence for the final report: {final_report}
+# Make sure the evidence comes in the form of description and supporting links that are in the report (and any new found links)."""
+
+
 SYNTHESIZE = """
-You are the private investigator. Your final task is to dig up as much information about the user as possible through the internet. 
-You are given a JSON object containing social media URLs found in the previous step: {search_results}
-You are also given the initial user information: {extracted_info}
+You are a Privacy Risk Auditor. Your task is to analyze how much personal or sensitive
+information a USER might unintentionally expose online.
 
-Your instructions are:
-1. For each valid URL in the `social_profiles` object, use the Google Search tool to retrieve its content (e.g., search for the URL itself to get the page's text).
-2. From the content of each page, extract key information like: Full Name, Bio Description, Location mentioned in the profile, and recent activity/topics. GIVE EVIDENCE in the form of links (e.g link to the tik tok video of a collaboration with the individual and others)
-3. Correlate this information. Does the LinkedIn profile name match the name on Twitter? Does the Instagram bio mention the topics from the user's original query?
-4. Synthesize all your findings into a clear, structured report for the end-user, which is your colleagues who are investigating the individual. Use Markdown formatting. The report should have a risk level and a detailed write up of findings categorized by information type (Identity, Location, Professional, etc.). PLEASE INCLUDE EVIDENCE OF WEBLINKS USED.
+Inputs:
+- A JSON object containing any social media URLs found for the username: {search_results}
+- The initial extracted metadata (topics, keywords, locations mentioned in posts): {extracted_info}
 
-Begin the report with "Digital Footprint Guardian: Your Privacy Analysis".
-Structure the final output exactly like the example you have been trained on. Be detailed and explain the IMPLICATIONS of your findings.
+Instructions:
+1. For each valid URL in the `social_profiles` object, use the Google Search tool to retrieve
+   the page’s publicly visible content (e.g., search for the URL itself).
+2. From the content, detect **categories of potentially sensitive exposure**, such as:
+   - Personal identifiers (real first name, email pattern, phone number).
+   - Location clues (neighborhoods, malls, landmarks).
+   - School/work indicators (uniforms, workplace logos).
+   - Habits and routines (frequent hangouts, meal timings).
+   - Metadata (EXIF GPS in photos, dates).
+3. Do NOT try to fully re-identify the person or confirm their real name. Instead, describe the
+   category of information leaked, with a short example (e.g. “Detected: possible first name
+   mentioned in comments”).
+4. Summarize these findings in a **Digital Footprint Guardian** report with:
+   - Risk Level (Low, Moderate, High).
+   - Findings categorized by type (Identity Exposure, Location Exposure, School/Work, etc.).
+   - Evidence as general weblinks or descriptions of the content (e.g., “TikTok post shows
+     uniform with school badge”).
+5. For each finding, add **IMPLICATIONS** and **RECOMMENDATIONS** for mitigation.
+
+Begin the report with: "Digital Footprint Guardian: Your Privacy Analysis".
+"""
+
+EVIDENCE = """
+Find supporting evidence for the privacy audit report: {final_report}.
+Make sure the evidence is written as **descriptions plus supporting links or references**
+that are already public in the user’s provided data. Do not output real names, addresses,
+or anything that would fully re-identify the person.
+Instead, phrase evidence like:
+- “TikTok video at a shopping mall, link: …”
+- “Instagram bio mentions ‘student life’, link: …”
+
+Always generalize the sensitive information while still showing the type of exposure.
 """
