@@ -5,6 +5,24 @@ import asyncio
 from websearch import footprint_pipeline
 import os
 from google.genai import types
+from text_extraction import SpeechToText, AudioExtractor, TextInput
+import logging
+from pathlib import Path
+logging.basicConfig(level=logging.INFO)
+
+
+video_file_path = "media/video1.mp4"
+audio_file_path = "media/output1.wav"
+output = "output1"
+ae=AudioExtractor()
+ae.extract_audio(video_file_path, audio_file_path)
+logging.info("Audio extracted successfully.")
+stt = SpeechToText()
+stt.transcribe_audio(audio_file_path, output)
+logging.info("Transcription completed successfully.")
+ti=TextInput()
+prompt=ti.input_text_prompt("kiwiiclaire", "description/description1.txt", "description/output1.txt")
+logging.info("Text input prepared successfully.")
 
 
 APP_NAME="google_search_agent"
@@ -23,7 +41,10 @@ async def setup_session_and_runner():
 async def call_agent_async(query):
     if not query.strip():
         raise ValueError("Query cannot be empty")
-        
+
+    # 1) Truncate file at the START of the run
+    Path("findings.txt").write_text("", encoding="utf-8")
+
     content = types.Content(role='user', parts=[types.Part(text=query)])
     session, runner = await setup_session_and_runner()
     events = runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=content)
@@ -33,19 +54,13 @@ async def call_agent_async(query):
             if event.is_final_response():
                 final_response = event.content.parts[0].text
                 print("Agent Response: ", final_response)
-                # Save to .txt
-                with open(f"findings.txt", "a", encoding="utf-8") as f:
-                    f.write(final_response)
+
+                # 2) Append each agent’s final output for THIS run
+                with open("findings.txt", "a", encoding="utf-8") as f:
+                    f.write(final_response + "\n\n---\n\n")
     except Exception as e:
         print(f"Error during agent execution: {str(e)}")
 
-description="description/description1.txt"
-transcript="description/output1.txt"
 
-with open(description, "r", encoding="utf-8") as f:
-    description_content = f.read()
 
-with open(transcript, "r", encoding="utf-8") as f:
-    transcript_content = f.read()
-
-asyncio.run(call_agent_async(f"""Tik Tok username: kiwiiclaire, media description: {description_content}, transcript: {transcript_content}"""))
+asyncio.run(call_agent_async(prompt))
