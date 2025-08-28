@@ -4,7 +4,7 @@ from pii_detection2 import PIIDetectionAgent
 
 agent = PIIDetectionAgent()
 
-image_to_analyze = "input_image3.jpg" 
+image_to_analyze = "input_image4.jpg" 
 
 
 try:

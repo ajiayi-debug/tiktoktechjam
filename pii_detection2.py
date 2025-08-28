@@ -30,8 +30,8 @@ class PIIReport:
 
 class PIIDetectionAgent:
     """
-    A streamlined on-device solution for detecting textual PII in images
-    using the EasyOCR model.
+    A robust on-device solution for detecting textual PII in images
+    using EasyOCR and flexible regex.
     """
 
     def __init__(self):
@@ -39,21 +39,48 @@ class PIIDetectionAgent:
         self._initialize_pii_patterns()
         
         logger.info("Loading EasyOCR model (this may download on first run)...")
-        # Initialize EasyOCR. It will use the CPU by default if no GPU is found.
         self.ocr_reader = easyocr.Reader(['en'])
         logger.info("EasyOCR model loaded successfully.")
 
     def _initialize_pii_patterns(self):
-        """Initializes regex patterns for various PII types."""
+        """Initializes comprehensive, OCR-forgiving regex patterns."""
         self.pii_patterns = {
-            'singapore_nric': {'pattern': r'\b[STFG]\d{7}[A-Z]\b', 'description': 'Singapore NRIC', 'risk': 'high'},
-            'singapore_phone': {'pattern': r'(?:\+65\s?)?[89]\d{3}\s?\d{4}\b', 'description': 'Singapore phone number', 'risk': 'medium'},
-            'singapore_address': {'pattern': r'\b(?:[Bb8][Ll1][Kk]|[Bb8][Ll1][0oO][Cc][Kk])?\s*\d+[A-Z]?\s+[\w\s]+(?:Road|Street|Avenue|Drive|Place|Lane)\s*(?:#\d+-\d+)?\s*Singapore\s*\d{6}\b', 'description': 'Singapore address', 'risk': 'high'},
-            'singapore_postal': {'pattern': r'\bSingapore\s*\d{6}\b', 'description': 'Singapore postal code', 'risk': 'medium'},
-            'email': {'pattern': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', 'description': 'Email address', 'risk': 'medium'},
-            'credit_card': {'pattern': r'\b(?:\d{4}[\s-]?){3}\d{4}\b', 'description': 'Credit card number', 'risk': 'high'},
-            'social_media': {'pattern': r'@[A-Za-z0-9_]+', 'description': 'Social media handle', 'risk': 'low'},
-            'ip_address': {'pattern': r'\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b', 'description': 'IP address', 'risk': 'medium'}
+            'singapore_nric': {
+                'pattern': r'\b[5STFG6][0-9OIl]{7}[A-Z]\b', 
+                'description': 'Singapore NRIC', 'risk': 'high'
+            },
+            'singapore_phone': {
+                'pattern': r'(?:\+?65[\s-]?)?[8B9][0-9]{3}[\s-]?[0-9]{4}\b', 
+                'description': 'Singapore phone number', 'risk': 'medium'
+            },
+            'email': {
+                'pattern': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', 
+                'description': 'Email address', 'risk': 'medium'
+            },
+            'credit_card': {
+                'pattern': r'\b(?:[0-9OIl]{4}[\s-]?){3}[0-9OIl]{4}\b', 
+                'description': 'Credit card number', 'risk': 'high'
+            },
+            'address_postal_standalone': {
+                'pattern': r'\b\d{6}\b',
+                'description': 'Standalone Postal Code', 'risk': 'medium'
+            },
+            'address_street_name': {
+                'pattern': r'\b\d{0,4}\s?[A-Za-z\s,]+(?:Avenue|Ave|Road|Rd|Street|St|Drive|Dr|Lane|Ln|Crescent|Cres)\b',
+                'description': 'Street Name/Address Fragment', 'risk': 'medium'
+            },
+            'address_blk_no': {
+                'pattern': r'\b(?:Block|Blk|B1k|81k)\s*\d+[A-Za-z]?\b',
+                'description': 'Block Number Fragment', 'risk': 'low'
+            },
+            'social_media': {
+                'pattern': r'@[A-Za-z0-9_]+', 
+                'description': 'Social media handle', 'risk': 'low'
+            },
+            'ip_address': {
+                'pattern': r'\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b', 
+                'description': 'IP address', 'risk': 'medium'
+            }
         }
 
     def detect_textual_pii(self, image: np.ndarray) -> List[Dict[str, Any]]:
@@ -62,10 +89,8 @@ class PIIDetectionAgent:
         try:
             logger.info("Extracting text from image with EasyOCR...")
             
-            # EasyOCR is generally robust with BGR images from OpenCV, but converting to RGB is best practice.
             image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             
-            # Use paragraph=True to group text, detail=0 to get only the text strings.
             ocr_results = self.ocr_reader.readtext(image_rgb, detail=0, paragraph=True)
             full_text = ' '.join(ocr_results)
             
@@ -145,7 +170,7 @@ class PIIDetectionAgent:
             recommendations.append("CRITICAL: NRIC number detected - remove immediately")
         if any(pii['type'] in ['email', 'singapore_phone'] for pii in textual_pii):
             recommendations.append("Contact information visible - consider removing")
-        if any(pii['type'] == 'singapore_address' for pii in textual_pii):
+        if any(pii['type'].startswith('address_') for pii in textual_pii):
             recommendations.append("Address information detected - high doxxing risk")
             
         if not recommendations:
