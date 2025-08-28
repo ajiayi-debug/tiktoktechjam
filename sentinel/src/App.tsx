@@ -1,4 +1,3 @@
-// src/App.tsx
 import './App.css'
 import { useEffect, useMemo, useRef, useState } from '@lynx-js/react'
 
@@ -11,17 +10,18 @@ import AgentSettings from './components/AgentSettings.js'
 import type { AgentOutput, AgentTransportMode, Submission } from './types.js'
 import { computeDanger } from './lib/score.js'
 import { AgentRegistry } from './agents/AgentRegistry.js'
+import { safeStorage } from './lib/safeStorage.js'
 
 export function App(props: { onRender?: () => void }) {
   const [mode, setMode] = useState<AgentTransportMode>(
-    () => (localStorage.getItem('sentinel.mode') as AgentTransportMode) || 'mock'
+    () => (safeStorage.getItem('sentinel.mode') as AgentTransportMode) || 'mock'
   )
   const [busy, setBusy] = useState(false)
   const [outputs, setOutputs] = useState<AgentOutput[]>([])
   const [lastSubmission, setLastSubmission] = useState<Submission | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
-  // Fire onRender once so the existing test can pass
+  // allow tests to hook into first paint
   const called = useRef(false)
   useEffect(() => {
     if (!called.current) {
@@ -36,7 +36,7 @@ export function App(props: { onRender?: () => void }) {
 
   const showToast = (msg: string) => {
     setToast(msg)
-    window.setTimeout(() => setToast(null), 2600)
+    setTimeout(() => setToast(null), 2600)
   }
 
   const runScan = async (text: string, media: Submission['media']) => {
@@ -47,7 +47,7 @@ export function App(props: { onRender?: () => void }) {
     try {
       const res = await registry.runAll(sub, mode)
       setOutputs(res)
-    } catch (err: unknown) {
+    } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error'
       showToast(`Scan failed: ${message}`)
     } finally {
@@ -75,10 +75,9 @@ export function App(props: { onRender?: () => void }) {
           <view
             className="btn btn-ghost"
             bindtap={() => {
-              'background only'
               const next: AgentTransportMode = mode === 'mock' ? 'http' : 'mock'
               setMode(next)
-              localStorage.setItem('sentinel.mode', next)
+              safeStorage.setItem('sentinel.mode', next)
             }}
           >
             <text>{mode === 'mock' ? 'Mock' : 'HTTP'}</text>
@@ -109,7 +108,6 @@ export function App(props: { onRender?: () => void }) {
         </view>
       </view>
 
-      {/* Busy overlay */}
       {busy && (
         <view className="veil">
           <view className="card center">
@@ -119,7 +117,6 @@ export function App(props: { onRender?: () => void }) {
         </view>
       )}
 
-      {/* Toast */}
       {toast && (
         <view style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 50 }}>
           <view className="card" style={{ background: '#1a1c25', borderColor: '#2b3b52' }}>

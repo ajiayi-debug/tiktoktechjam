@@ -1,54 +1,58 @@
 // src/components/ShareComposer.tsx
-import { useCallback, useRef, useState } from '@lynx-js/react'
-import type { DangerScore, UploadedMedia } from '../types.js'
-import { Input, Textarea, Video } from './Primitives.js'
+import { useCallback, useRef, useState } from '@lynx-js/react';
+import type { DangerScore, UploadedMedia } from '../types.js';
+import { Input, Textarea, Video } from './Primitives.js';
 
-type LynxInputEvt = { detail?: { value?: string }; currentTarget?: { value?: string } }
+type LynxBindEvt = { detail?: { value?: string } };
 
 export default function ShareComposer(props: {
-  busy: boolean
-  score: DangerScore | null
-  onScan: (text: string, media: UploadedMedia[]) => void
-  onCensor: () => void
+  busy: boolean;
+  score: DangerScore | null;
+  onScan: (text: string, media: UploadedMedia[]) => void;
+  onCensor: () => void;
 }) {
-  const [text, setText] = useState('')
-  const [location, setLocation] = useState('Example Street, City')
-  const [media, setMedia] = useState<UploadedMedia[]>([])
-  const inputRef = useRef<unknown>(null)
+  const [text, setText] = useState('');
+  const [location, setLocation] = useState('Example Street, City');
+  const [media, setMedia] = useState<UploadedMedia[]>([]);
 
-  const onTextInput = (e: LynxInputEvt) =>
-    setText(e.detail?.value ?? e.currentTarget?.value ?? '')
+  // Works in both Lynx and web preview
+  const inputRef = useRef<HTMLInputElement | { click?: () => void } | null>(null);
 
-  const onLocationInput = (e: LynxInputEvt) =>
-    setLocation(e.detail?.value ?? e.currentTarget?.value ?? '')
+  const onTextInput = (e: LynxBindEvt) => {
+    setText(e.detail?.value ?? '');
+  };
+
+  const onLocationInput = (e: LynxBindEvt) => {
+    setLocation(e.detail?.value ?? '');
+  };
 
   const pickFiles = useCallback(() => {
-    'background only'
-    const el = inputRef.current as { click?: () => void } | null
-    el?.click?.()
-  }, [])
-
-  const extractFiles = (ev: unknown): FileList | null => {
-    const e = ev as { target?: { files?: FileList | null }; currentTarget?: { files?: FileList | null } } | undefined
-    return e?.target?.files ?? e?.currentTarget?.files ?? null
-  }
+    'background only';
+    const el = inputRef.current;
+    // Narrow and call .click() if present
+    if (el && typeof (el as HTMLInputElement).click === 'function') {
+      (el as HTMLInputElement).click();
+    } else if (el && typeof (el as { click?: () => void }).click === 'function') {
+      (el as { click?: () => void }).click?.();
+    }
+  }, []);
 
   const onFiles = useCallback((files: FileList | null) => {
-    if (!files) return
+    if (!files) return;
     const items: UploadedMedia[] = Array.from(files).map((file) => {
-      const kind = file.type.startsWith('video/') ? 'video' : 'image'
-      return { id: crypto.randomUUID(), file, kind, previewUrl: URL.createObjectURL(file) }
-    })
-    setMedia((m) => (items.length ? items : m))
-  }, [])
+      const kind = file.type.startsWith('video/') ? 'video' : 'image';
+      return { id: crypto.randomUUID(), file, kind, previewUrl: URL.createObjectURL(file) };
+    });
+    setMedia((m) => (items.length ? items : m));
+  }, []);
 
   const scan = useCallback(() => {
-    'background only'
-    props.onScan(text, media)
-  }, [props, text, media])
+    'background only';
+    props.onScan(text, media);
+  }, [props, text, media]);
 
-  const first = media[0]
-  const risk = props.score?.value ?? null
+  const first = media[0];
+  const risk = props.score?.value ?? null;
 
   return (
     <view className="card">
@@ -139,9 +143,14 @@ export default function ShareComposer(props: {
               ref={inputRef}
               type="file"
               accept="image/*,video/*"
-              multiple={false}
-              style={{ display: 'none' }}
-              onChange={(e) => onFiles(extractFiles(e))}
+              className="hidden-input"                    // instead of style={{ display: 'none' }}
+              onChange={(e) => {                          // robust: works in Lynx + web
+                const evt = e as {
+                  currentTarget?: { files?: FileList | null };
+                  target?: { files?: FileList | null };
+                };
+                onFiles(evt.currentTarget?.files ?? evt.target?.files ?? null);
+              }}
             />
           </view>
         </view>
@@ -163,5 +172,5 @@ export default function ShareComposer(props: {
         </view>
       </view>
     </view>
-  )
+  );
 }

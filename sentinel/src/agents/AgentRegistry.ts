@@ -1,42 +1,43 @@
-import type { AgentConfig, AgentId, AgentOutput, Submission, AgentTransportMode } from "../types.js";
-import { runMockAgents } from "./mock.js";
-import { runHttpAgents } from "./http.js";
-
+import type { AgentConfig, AgentId, AgentOutput, Submission, AgentTransportMode } from '../types.js';
+import { runMockAgents } from './mock.js';
+import { runHttpAgents } from './http.js';
+import { safeStorage } from '../lib/safeStorage.js';
 
 export class AgentRegistry {
-private configs: Record<AgentId, AgentConfig> = {
-"text-leak": { id: "text-leak", name: "Agent 1 – Text Leak Scanner", enabled: true },
-"reverse-image": { id: "reverse-image", name: "Agent 2 – Reverse Image Search", enabled: true },
-redaction: { id: "redaction", name: "Agent 3 – Redaction & Warning", enabled: true },
-};
+  private configs: Record<AgentId, AgentConfig> = {
+    'text-leak': { id: 'text-leak', name: 'Agent 1 – Text Leak Scanner', enabled: true },
+    'reverse-image': { id: 'reverse-image', name: 'Agent 2 – Reverse Image Search', enabled: true },
+    redaction: { id: 'redaction', name: 'Agent 3 – Redaction & Warning', enabled: true },
+  };
 
+  constructor() {
+    try {
+      const raw = safeStorage.getItem('sentinel.agentConfigs');
+      if (raw) {
+        const saved = JSON.parse(raw) as AgentConfig[];
+        for (const c of saved) this.configs[c.id] = { ...this.configs[c.id], ...c };
+      }
+    } catch {
+      // ignore corrupt or unavailable storage
+    }
+  }
 
-constructor() {
-// Load from localStorage if present
-try {
-const raw = localStorage.getItem("sentinel.agentConfigs");
-if (raw) {
-const saved = JSON.parse(raw) as AgentConfig[];
-for (const c of saved) this.configs[c.id] = { ...this.configs[c.id], ...c };
-}
-} catch {
-  // Ignore errors: localStorage may be unavailable or data may be malformed
-}
-}
+  list(): AgentConfig[] {
+    return Object.values(this.configs);
+  }
 
+  update(cfg: AgentConfig) {
+    this.configs[cfg.id] = cfg;
+    try {
+      safeStorage.setItem('sentinel.agentConfigs', JSON.stringify(this.list()));
+    } catch {
+      // ignore quota/permission errors
+    }
+  }
 
-list(): AgentConfig[] { return Object.values(this.configs); }
-
-
-update(cfg: AgentConfig) {
-this.configs[cfg.id] = cfg;
-localStorage.setItem("sentinel.agentConfigs", JSON.stringify(this.list()));
-}
-
-
-async runAll(submission: Submission, mode: AgentTransportMode): Promise<AgentOutput[]> {
-const enabled = this.list().filter((c) => c.enabled);
-if (mode === "mock") return runMockAgents(submission, enabled);
-return runHttpAgents(submission, enabled);
-}
+  async runAll(submission: Submission, mode: AgentTransportMode): Promise<AgentOutput[]> {
+    const enabled = this.list().filter((c) => c.enabled);
+    if (mode === 'mock') return runMockAgents(submission, enabled);
+    return runHttpAgents(submission, enabled);
+  }
 }
