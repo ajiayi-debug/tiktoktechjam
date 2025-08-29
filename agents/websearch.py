@@ -3,7 +3,7 @@ from google.adk.tools import google_search, url_context
 import os
 import certifi
 from dotenv import load_dotenv
-from prompt import WEBSEARCH, QUERY_GENERATE,EXTRACT_INFO,SYNTHESIZE,EVIDENCE
+from agents.prompt import WEBSEARCH, QUERY_GENERATE,EXTRACT_INFO,SYNTHESIZE,EVIDENCE
 from google.adk.agents import SequentialAgent
 load_dotenv()
 

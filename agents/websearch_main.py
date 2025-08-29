@@ -2,10 +2,10 @@ from urllib import response
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 import asyncio
-from websearch import footprint_pipeline
+from agents.websearch import footprint_pipeline
 import os
 from google.genai import types
-from text_extraction import SpeechToText, AudioExtractor, TextInput
+from tools.text_extraction import SpeechToText, AudioExtractor, TextInput
 import logging
 from pathlib import Path
 logging.basicConfig(level=logging.INFO)
