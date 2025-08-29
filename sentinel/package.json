@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@lynx-js/react": "^0.112.4",
+    "@rspack/binding-darwin-arm64": "^1.5.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
@@ -25,7 +26,6 @@
     "@lynx-js/rspeedy": "^0.10.8",
     "@lynx-js/types": "3.3.0",
     "@rsbuild/plugin-type-check": "1.2.4",
-    "@rspack/binding-win32-x64-msvc": "^1.5.0",
     "@testing-library/jest-dom": "^6.8.0",
     "@types/react": "^18.3.24",
     "eslint": "^9.32.0",
