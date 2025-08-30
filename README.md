@@ -11,4 +11,4 @@ Instead of directly harvesting or leaking information, our solution acts as a pr
 This approach transforms generative AI from a threat into a safeguard — using the same power that enables privacy attacks to instead defend and educate users about their digital footprint.
 
 ## Architecture
-<img width="861" height="557" alt="Screenshot 2025-08-30 at 12 33 17 PM" src="https://github.com/user-attachments/assets/2454c4f0-8ce5-4b5a-9caa-42220e429862" />
+<img width="933" height="599" alt="Screenshot 2025-08-30 at 12 36 42 PM" src="https://github.com/user-attachments/assets/0c6099b2-b302-491a-949d-2261f9be0968" />
