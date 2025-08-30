@@ -40,7 +40,7 @@ export default function UploadPage() {
 
   // ✅ proper guard for button enablement
   const canSend = useMemo(
-    () => Boolean(username.trim() && image && video),
+    () => Boolean(username.trim() && image || video),
     [username, image, video]
   );
 
@@ -52,7 +52,7 @@ export default function UploadPage() {
         alert('Username is required');
         return;
       }
-      if (!image || !video) {
+      if (!image && !video) {
         alert('Please upload one image and one video');
         return;
       }
