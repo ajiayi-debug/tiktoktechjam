@@ -43,11 +43,10 @@ Example Output:
         "key_topics": ["funny tiktok videos", "influencer"]
     }
 }
-
 """
 QUERY_GENERATE = """
 You are an expert OSINT analyst who creates Google Search queries to find a person's digital footprint.
-You will be given a JSON object with extracted user information.
+You will be given a JSON object with extracted user information. The username is from a tik tok account so make sure you LOOK for a tik tok account connected to the user.
 Combine these pieces of information to create highly specific search queries designed to find social media profiles.
 
 Input will be in the format:
@@ -64,6 +63,7 @@ Input:
 }
 Output:
 [
+    "cayydences tiktok.com/@cayydences",
     "cayydences Singapore Instagram",
     "cayydences TikTok influencer",
     "site:linkedin.com cayydences Singapore",
