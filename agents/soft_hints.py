@@ -1,76 +1,117 @@
 import os
-import ffmpeg
 import json
-from typing import List
-from google.adk.agents import LlmAgent, SequentialAgent, BaseAgent
+from typing import List, Optional
+import ffmpeg
+from google.adk.agents import LlmAgent, SequentialAgent
 import google.genai.types as types
 from prompt import PROMPT_VISUAL_HINTS, PROMPT_HINT_RESEARCH, PROMPT_RISK_SUMMARY
 
 
 def extract_frames(video_path: str, output_dir: str, fps: int = 1) -> List[str]:
+    if not os.path.isfile(video_path):
+        raise FileNotFoundError(f"Video not found: {video_path}")
     os.makedirs(output_dir, exist_ok=True)
     (
         ffmpeg.input(video_path)
         .filter("fps", fps=fps)
-        .output(os.path.join(output_dir, "frame_%04d.jpg"), start_number=0)
-        .run(overwrite_output=True, quiet=True)
+        .output(os.path.join(output_dir, "frame_%05d.jpg"), start_number=0)
+        .run(overwrite_output=True, quiet=True)  # keyword args only
     )
-    return sorted(
-        [
-            os.path.join(output_dir, f)
-            for f in os.listdir(output_dir)
-            if f.endswith(".jpg")
-        ]
-    )
+    frames = [
+        os.path.join(output_dir, f)
+        for f in os.listdir(output_dir)
+        if f.lower().endswith(".jpg")
+    ]
+    return sorted(frames)
 
 
-def load_files_as_parts(file_paths: List[str]) -> List[types.Part]:
-    parts = []
-    for path in file_paths:
-        ext = os.path.splitext(path)[1].lower()
-        if ext in [".jpg", ".jpeg"]:
-            mime = "image/jpeg"
-        elif ext == ".png":
-            mime = "image/png"
-        else:
-            raise ValueError(f"Unsupported image extension {ext}")
-        with open(path, "rb") as f:
+def pick_evenly_spaced(items: List[str], limit: int) -> List[str]:
+    if limit <= 0 or len(items) <= limit:
+        return items
+    step = len(items) / float(limit)
+    idxs = [int(i * step) for i in range(limit)]
+    idxs = sorted(set(min(i, len(items) - 1) for i in idxs))
+    return [items[i] for i in idxs]
+
+
+def image_path_to_mime(path: str) -> str:
+    ext = os.path.splitext(path)[1].lower()
+    if ext in (".jpg", ".jpeg"):
+        return "image/jpeg"
+    if ext == ".png":
+        return "image/png"
+    raise ValueError(f"Unsupported image extension for {path}. Use .jpg/.jpeg/.png")
+
+
+def load_images_as_parts(paths: List[str]) -> List[types.Part]:
+    parts: List[types.Part] = []
+    for p in paths:
+        mime = image_path_to_mime(p)
+        with open(p, "rb") as f:
             parts.append(types.Part.from_bytes(data=f.read(), mime_type=mime))
     return parts
 
 
-def prepare_parts_from_project_path(path: str) -> List[types.Part]:
-    ext = os.path.splitext(path)[1].lower()
-    if ext == ".mp4":
-        frame_dir = os.path.join("tmp_frames")
-        frame_files = extract_frames(path, frame_dir, fps=1)
-        return load_files_as_parts(frame_files)
-    elif ext in [".jpg", ".jpeg", ".png"]:
-        return load_files_as_parts([path])
-    else:
-        raise ValueError("Only .mp4 video or .jpg/.jpeg/.png images supported.")
+def prepare_parts_from_paths(
+    *,
+    image_path: Optional[str],
+    video_path: Optional[str],
+    fps: int = 1,
+    max_frames: int = 8,
+    tmp_dir: str = ".tmp_frames",
+) -> List[types.Part]:
+    parts: List[types.Part] = []
+
+    if video_path:
+        frames = extract_frames(video_path, tmp_dir, fps=fps)
+        frames = pick_evenly_spaced(frames, max_frames)
+        if not frames:
+            raise RuntimeError(f"No frames extracted from {video_path}")
+        parts.extend(load_images_as_parts(frames))
+
+    if image_path:
+        if not os.path.isfile(image_path):
+            raise FileNotFoundError(f"Image not found: {image_path}")
+        parts.extend(load_images_as_parts([image_path]))
+
+    if not parts:
+        raise ValueError(
+            "No inputs provided. Set at least one of image_path or video_path."
+        )
+
+    return parts
 
 
 class ImageSoftHintsAgent(LlmAgent):
-    """
-    LLM vision agent: inspects image frames for soft privacy signifiers.
-    """
-
-    def __init__(self):
+    def __init__(
+        self,
+        *,
+        image_path: Optional[str] = None,
+        video_path: Optional[str] = None,
+        fps: int = 1,
+        max_frames: int = 8,
+        tmp_dir: str = ".tmp_frames",
+    ):
         super().__init__(
             name="ImageSoftHintsAgent",
-            description="Extracts soft privacy signifiers from images (no PII).",
+            description="Extracts soft privacy signifiers from local images/frames (no PII).",
             model="gemini-2.0-flash",
             instruction=PROMPT_VISUAL_HINTS,
         )
+        self.image_path = image_path
+        self.video_path = video_path
+        self.fps = fps
+        self.max_frames = max_frames
+        self.tmp_dir = tmp_dir
 
     async def _build_input(self, ctx):
-        file_path = ctx.session.state.get(
-            "local_file"
-        )  # e.g., "project/data/video.mp4"
-        if not file_path:
-            raise ValueError("No 'local_file' provided in session.state")
-        parts = prepare_parts_from_project_path(file_path)
+        parts = prepare_parts_from_paths(
+            image_path=self.image_path,
+            video_path=self.video_path,
+            fps=self.fps,
+            max_frames=self.max_frames,
+            tmp_dir=self.tmp_dir,
+        )
         return [types.Part.from_text(text=PROMPT_VISUAL_HINTS), *parts]
 
     async def _postprocess_output(self, ctx, result):
@@ -115,13 +156,13 @@ class HintResearchAgent(LlmAgent):
 
 class RiskSummaryAgent(LlmAgent):
     """
-    Summarises overall privacy risk from hints and research findings.
+    Synthesizes overall privacy risk from hints and research findings.
     """
 
     def __init__(self):
         super().__init__(
             name="RiskSummaryAgent",
-            description="Synthesises research into overall privacy risk.",
+            description="Synthesizes research into overall privacy risk.",
             model="gemini-2.0-flash",
             instruction=PROMPT_RISK_SUMMARY,
         )
@@ -146,12 +187,35 @@ class RiskSummaryAgent(LlmAgent):
         return result
 
 
-soft_hints_evaluator = SequentialAgent(
-    name="SoftHintPrivacyPipeline",
-    sub_agents=[
-        ImageSoftHintsAgent(),
-        HintResearchAgent(),
-        RiskSummaryAgent(),
-    ],
-    description="Extracts soft signifiers, researches identifiability, and scores risk.",
+def make_privacy_pipeline(
+    *,
+    image_path: Optional[str] = None,
+    video_path: Optional[str] = None,
+    fps: int = 1,
+    max_frames: int = 8,
+    tmp_dir: str = ".tmp_frames",
+) -> SequentialAgent:
+    return SequentialAgent(
+        name="SoftHintPrivacyPipeline",
+        sub_agents=[
+            ImageSoftHintsAgent(
+                image_path=image_path,
+                video_path=video_path,
+                fps=fps,
+                max_frames=max_frames,
+                tmp_dir=tmp_dir,
+            ),
+            HintResearchAgent(),
+            RiskSummaryAgent(),
+        ],
+        description=(
+            "Extracts soft visual signifiers from local files, researches identifiability, "
+            "and scores privacy risk. Expects outputs in session.state: "
+            "visual_hints, research_findings, risk_summary."
+        ),
+    )
+
+
+soft_hints_evaluator = make_privacy_pipeline(
+    image_path="../image.jpg", video_path="../video.mp4"
 )
