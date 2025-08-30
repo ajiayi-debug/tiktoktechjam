@@ -8,59 +8,82 @@ const panel = '#141414';
 const line = '#2a2a2a';
 const textMuted = '#9ca3af';
 
-// --- Mock agent calls (replace with your real endpoints later) ---
-async function runAgents({ text, photos, videos }) {
-  const textFindings = text
-    ? [{ type: 'text-crawl', summary: 'No exact matches found. Similar phrasing on 2 sites.', risk: 20 }]
-    : [];
-  const reverseFindings =
-    photos.length + videos.length > 0
-      ? [{ type: 'reverse-media', summary: 'Potential face match risk if posted publicly.', risk: 45 }]
-      : [];
-  const censorFindings =
-    photos.length + videos.length > 0
-      ? [{ type: 'censor', summary: 'Blurred faces and license plates created.', risk: 10 }]
-      : [];
-
-  const findings = [...textFindings, ...reverseFindings, ...censorFindings];
-  const base = findings.reduce((m, f) => Math.max(m, f.risk), 0);
-  const dangerScore = Math.min(100, base + Math.max(0, findings.length - 1) * 5);
-
-  return {
-    findings,
-    dangerScore,
-    censoredMedia: photos.concat(videos).map((f, i) => ({ id: i, label: f.name || `media-${i}`, url: URL.createObjectURL(f) })),
-  };
-}
+// --- helper: convert File -> base64 payload (JS version) ---
+const fileToB64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result; // "data:<mime>;base64,<...>"
+      const [header, b64] = String(result).split(',');
+      const match = header.match(/data:(.*?);base64/);
+      resolve({
+        data: b64,
+        filename: file.name,
+        content_type: match ? match[1] : file.type || 'application/octet-stream',
+        extension: (file.name.split('.').pop() || '').toLowerCase(),
+      });
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
 export default function UploadPage() {
-  const [username, setUsername] = useState('');         // <-- NEW
+  const [username, setUsername] = useState('');
   const [text, setText] = useState('');
-  const [photos, setPhotos] = useState([]);
-  const [videos, setVideos] = useState([]);
+  const [image, setImage] = useState(null); // single file
+  const [video, setVideo] = useState(null); // single file
   const [busy, setBusy] = useState(false);
+
   const navigate = useNavigate();
-  const photoInput = useRef(null);
+  const imageInput = useRef(null);
   const videoInput = useRef(null);
 
-  const canAnalyze = useMemo(() => Boolean(text || photos.length > 0 || videos.length > 0), [text, photos.length, videos.length]);
+  // ✅ proper guard for button enablement
+  const canSend = useMemo(
+    () => Boolean(username.trim() && image && video),
+    [username, image, video]
+  );
 
-  const onFiles = (kind, fileList) => {
-    const arr = Array.from(fileList || []);
-    if (kind === 'photo') setPhotos(p => [...p, ...arr]);
-    if (kind === 'video') setVideos(p => [...p, ...arr]);
-  };
-
-  const onRemove = (kind, idx) => {
-    if (kind === 'photo') setPhotos(ps => ps.filter((_, i) => i !== idx));
-    if (kind === 'video') setVideos(ps => ps.filter((_, i) => i !== idx));
-  };
-
-  const runAnalysis = async () => {
+  const submitAsJson = async () => {
     try {
       setBusy(true);
-      const report = await runAgents({ text, photos, videos, username });
-      navigate('/results', { state: { report, text, photos, videos, username } }); // <-- pass username
+
+      if (!username.trim()) {
+        alert('Username is required');
+        return;
+      }
+      if (!image || !video) {
+        alert('Please upload one image and one video');
+        return;
+      }
+      //COMMENT WHEN BE IS READY
+      const mockReport = {
+        findings: [{ type: 'mock', summary: 'Fake run, BE not ready', risk: 10 }],
+        dangerScore: 10,
+      };
+      navigate('/results', { state: { report: mockReport } });
+      return;
+      // UNCOMMENT WHEN BE IS READY!!!
+      // const imagePayload = await fileToB64(image);
+      // const videoPayload = await fileToB64(video);
+
+      // const payload = {
+      //   username: username.trim(),
+      //   text,
+      //   image: imagePayload,
+      //   video: videoPayload,
+      // };
+
+      // const res = await fetch('http://localhost:8000/api/upload_json', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(payload),
+      // });
+
+      // if (!res.ok) throw new Error(await res.text());
+      // const report = await res.json();
+
+      // navigate('/results', { state: { report } });
     } finally {
       setBusy(false);
     }
@@ -69,7 +92,7 @@ export default function UploadPage() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: bg, padding: 16 }}>
       <div style={{ background: panel, border: `1px solid ${line}`, borderRadius: 12, padding: 12 }}>
-        {/* Username (optional) */}
+        {/* Username (required) */}
         <input
           type="text"
           inputMode="text"
@@ -94,7 +117,7 @@ export default function UploadPage() {
         <textarea
           placeholder="Type your caption, message, or any text…"
           value={text}
-          onChange={e => setText(e.target.value)}
+          onChange={(e) => setText(e.target.value)}
           rows={4}
           style={{
             width: '100%',
@@ -109,130 +132,83 @@ export default function UploadPage() {
 
         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
           <button
-            onClick={() => photoInput.current?.click()}
+            onClick={() => imageInput.current?.click()}
             style={{ flex: 1, padding: 12, background: tiktokCyan, border: 'none', borderRadius: 10, fontWeight: 600 }}
           >
-            Upload Photos
+            Upload Image
           </button>
           <input
-            ref={photoInput}
+            ref={imageInput}
             type="file"
             accept="image/*"
-            multiple
-            capture="environment"
             style={{ display: 'none' }}
-            onChange={e => onFiles('photo', e.target.files)}
+            onChange={(e) => setImage(e.target.files?.[0] || null)}
           />
 
           <button
             onClick={() => videoInput.current?.click()}
             style={{ flex: 1, padding: 12, background: tiktokPink, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 600 }}
           >
-            Upload Videos
+            Upload Video
           </button>
           <input
             ref={videoInput}
             type="file"
             accept="video/*"
-            multiple
-            capture
             style={{ display: 'none' }}
-            onChange={e => onFiles('video', e.target.files)}
+            onChange={(e) => setVideo(e.target.files?.[0] || null)}
           />
         </div>
 
-        {(photos.length > 0 || videos.length > 0) && (
+        {(image || video) && (
           <div style={{ marginTop: 16 }}>
-            {photos.length > 0 && (
+            {image && (
               <div style={{ marginBottom: 12 }}>
-                <div style={{ color: '#fff', marginBottom: 8 }}>Photos</div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {photos.map((photo, idx) => (
-                    <div key={`photo-${idx}`} style={{ position: 'relative' }}>
-                      <img
-                        src={URL.createObjectURL(photo)}
-                        alt="Uploaded"
-                        style={{ width: 100, height: 100, borderRadius: 8, objectFit: 'cover' }}
-                      />
-                      <button
-                        onClick={() => onRemove('photo', idx)}
-                        style={{
-                          position: 'absolute',
-                          top: -8,
-                          right: -8,
-                          backgroundColor: '#ff3b30',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: 24,
-                          height: 24,
-                          cursor: 'pointer',
-                          fontWeight: 700,
-                        }}
-                        aria-label={`Remove photo ${idx + 1}`}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                <div style={{ color: '#fff', marginBottom: 8 }}>Image</div>
+                <img
+                  src={URL.createObjectURL(image)}
+                  alt="Uploaded"
+                  style={{ width: 120, height: 120, borderRadius: 8, objectFit: 'cover' }}
+                />
               </div>
             )}
-
-            {videos.length > 0 && (
+            {video && (
               <div>
-                <div style={{ color: '#fff', marginBottom: 8 }}>Videos</div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {videos.map((video, idx) => (
-                    <div key={`video-${idx}`} style={{ position: 'relative' }}>
-                      <video
-                        src={URL.createObjectURL(video)}
-                        controls
-                        style={{ width: 150, height: 100, borderRadius: 8, objectFit: 'cover' }}
-                      />
-                      <button
-                        onClick={() => onRemove('video', idx)}
-                        style={{
-                          position: 'absolute',
-                          top: -8,
-                          right: -8,
-                          backgroundColor: '#ff3b30',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: 24,
-                          height: 24,
-                          cursor: 'pointer',
-                          fontWeight: 700,
-                        }}
-                        aria-label={`Remove video ${idx + 1}`}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                <div style={{ color: '#fff', marginBottom: 8 }}>Video</div>
+                <video
+                  src={URL.createObjectURL(video)}
+                  controls
+                  style={{
+                    width: '100%',
+                    height: 'auto',       // keep aspect ratio
+                    maxHeight: 320,       // optional cap
+                    display: 'block',
+                    background: '#000',
+                    objectFit: 'contain', // show full frame, no crop
+                  }}
+                />
               </div>
             )}
           </div>
         )}
 
         <button
-          onClick={runAnalysis}
-          disabled={!canAnalyze || busy}
+          onClick={submitAsJson}
+          disabled={!canSend || busy}
           style={{
             marginTop: 16,
             padding: 12,
             width: '100%',
-            background: canAnalyze && !busy ? tiktokCyan : '#2b2b2b',
+            background: canSend && !busy ? tiktokCyan : '#2b2b2b',
             color: '#000',
             border: 'none',
             borderRadius: 10,
             fontWeight: 700,
             opacity: busy ? 0.8 : 1,
+            cursor: canSend && !busy ? 'pointer' : 'not-allowed',
           }}
         >
-          {busy ? 'Analyzing…' : 'Analyze'}
+          {busy ? 'Uploading…' : 'Analyze'}
         </button>
 
         <div style={{ color: textMuted, fontSize: 12, marginTop: 8 }}>
