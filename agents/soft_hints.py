@@ -187,7 +187,7 @@ class RiskSummaryAgent(LlmAgent):
         return result
 
 
-def make_privacy_pipeline(
+def make_soft_hints_pipeline(
     *,
     image_path: Optional[str] = None,
     video_path: Optional[str] = None,
@@ -216,6 +216,6 @@ def make_privacy_pipeline(
     )
 
 
-soft_hints_evaluator = make_privacy_pipeline(
+soft_hints_evaluator = make_soft_hints_pipeline(
     image_path="../image.jpg", video_path="../video.mp4"
 )
