@@ -4,7 +4,7 @@ from google.adk.tools import google_search, url_context
 import os
 import certifi
 from dotenv import load_dotenv
-from agents.prompt import WEBSEARCH, QUERY_GENERATE,EXTRACT_INFO,SYNTHESIZE,EVIDENCE
+from agents.prompt import WEBSEARCH, QUERY_GENERATE,EXTRACT_INFO,SYNTHESIZE,EVIDENCE,FINAL_WEBSEARCH
 from tools.text_extraction import ExtractionText
 from google.adk.agents import SequentialAgent
 from pathlib import Path
@@ -63,6 +63,15 @@ supporting_evidence=Agent(
     tools=[google_search,url_context]
 )
 
+final_report_web = Agent(
+    name="final_report_agent",
+    model="gemini-2.5-pro",
+    description="Agent that generates the final report based on all gathered information.",
+    instruction=FINAL_WEBSEARCH,
+    output_key="final_websearch_report",
+    tools=[google_search,url_context]
+)
+
 footprint_pipeline = SequentialAgent(
     name="footprint_pipeline",
     sub_agents=[
@@ -70,6 +79,7 @@ footprint_pipeline = SequentialAgent(
         query_generator,
         search_and_find,
         synthesis_and_report,
-        supporting_evidence
+        supporting_evidence,
+        final_report_web
     ]
 )
