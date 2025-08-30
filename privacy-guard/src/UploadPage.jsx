@@ -8,25 +8,6 @@ const panel = '#141414';
 const line = '#2a2a2a';
 const textMuted = '#9ca3af';
 
-function DangerMeter({ score }) {
-  const pct = Math.min(100, Math.max(0, score));
-  return (
-    <div style={{ marginTop: 16 }}>
-      <div style={{ color: '#fff', fontSize: 12, marginBottom: 6 }}>Danger Meter: {pct}</div>
-      <div style={{ height: 10, background: '#1f1f1f', borderRadius: 999, overflow: 'hidden', border: '1px solid #222' }}>
-        <div
-          style={{
-            width: `${pct}%`,
-            height: '100%',
-            background: `linear-gradient(90deg, ${tiktokCyan}, ${tiktokPink})`,
-            transition: 'width 300ms ease',
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
 // --- Mock agent calls (replace with your real endpoints later) ---
 async function runAgents({ text, photos, videos }) {
   const textFindings = text
@@ -95,7 +76,7 @@ export default function UploadPage() {
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
-          placeholder="Enter your username (optional)"
+          placeholder="Enter your username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           style={{
