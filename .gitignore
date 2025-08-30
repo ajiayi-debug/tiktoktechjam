@@ -4,3 +4,7 @@ description/
 media/
 findings.txt
 venv/
+.venv/
+.DS_Store
+*.jpg
+*.env
