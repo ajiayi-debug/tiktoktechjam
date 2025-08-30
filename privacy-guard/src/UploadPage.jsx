@@ -78,7 +78,7 @@ export default function UploadPage() {
   const runAnalysis = async () => {
     try {
       setBusy(true);
-      const report = await runAgents({ text, photos, videos });
+      const report = await runAgents({ text, photos, videos, username });
       navigate('/results', { state: { report, text, photos, videos, username } }); // <-- pass username
     } finally {
       setBusy(false);
