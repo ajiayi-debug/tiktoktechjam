@@ -138,12 +138,3 @@ class ExtractionText:
             "combined_text": combined,
         }
 
-if __name__ == "__main__":
-    result = ExtractionText(
-        username="kiwiiclaire",
-        video_path="video1.mp4",
-        description_path="description1.txt",
-        out_prefix="output1",
-        audio_filename="output1.wav",
-        overwrite=True,
-    ).run()
