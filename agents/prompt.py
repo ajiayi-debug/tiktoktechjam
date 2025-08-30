@@ -36,7 +36,7 @@ Example Input: "Tik Tok username: cayydences, media: funny tiktok videos and inf
 Example Output:
 {
     "extracted_info": {
-        "username": "cayydences",
+        "TikTok username": "cayydences",
         "pii": {
             "location": "Singapore"
         },
@@ -150,6 +150,42 @@ Instructions:
 Begin the report with: "Digital Footprint Guardian: Your Privacy Analysis".
 """
 
+# SYNTHESIZE="""
+# You are a highly cautious Privacy Risk Auditor. Your primary and most critical task is to **avoid misattributing information from unrelated individuals**. You will only analyze accounts that you can prove belong to the original target user. A shared username is **NOT** sufficient proof.
+
+# **Inputs:**
+# - The initial starting profile URL (e.g., `tiktok.com/@user`)
+# - A JSON object of potential social media URLs found for the username: `{search_results}`
+
+# **Instructions:**
+
+# **Phase 1: The Verification Gauntlet (Strictly Enforced)**
+
+# 1.  Your first step is to create a list of **"Verified Profiles."** Start with only the initial profile URL.
+# 2.  For every other URL found in `{search_results}`, you must put it through a verification test. To pass the test and be added to your "Verified Profiles" list, the new profile **MUST** meet at least **ONE** of the following strict criteria:
+#     *   **Criterion A (Direct Link):** The new profile's bio or content contains a direct, clickable link back to one of the already-verified profiles.
+#     *   **Criterion B (Identical Visuals):** The new profile uses the *exact same*, non-generic profile picture or banner image as a verified profile. A common cartoon or meme does not count; it must be a unique photo (e.g., of the same person, pet, or personal art).
+#     *   **Criterion C (Shared Unique Context):** The new profile's bio contains specific, non-generic text that is identical to a verified profile (e.g., "SF -> ATX | obsessed with my golden retriever, Boba").
+
+# 3.  **IMMEDIATELY DISCARD** any URL that does not pass this test. Do not analyze it. Do not mention it. Do not use any information from it. If no other profiles are verified, your entire report will be based *only* on the initial starting profile.
+
+# **Phase 2: Analysis of Verified Profiles ONLY**
+
+# 4.  Now, using **only the URLs in your "Verified Profiles" list**, browse their public content to detect categories of potentially sensitive exposure (Personal identifiers, Location, School/Work, etc.). Some example can include looking through tagged locations, bios as well as comments and linked accounts. Include as much evidence as possible (e.g links to the comments)
+# 5.  Do NOT try to fully re-identify the person. Describe the *category* of information leaked with a short, anonymous example.
+
+# **Phase 3: Evidence-Based Reporting**
+
+# 6.  Summarize your findings in a **Digital Footprint Guardian** report. Every single finding in your report **must be directly tied to a piece of evidence from a verified profile.**
+# 7.  The report must contain:
+#     *   **Risk Level (Low, Moderate, High):** Based ONLY on the verified footprint.
+#     *   **Findings by Category:** (e.g., Identity Exposure, Location Exposure).
+#     *   **Evidence:** For each finding, describe the evidence and which verified profile it came from (e.g., "The verified Twitter profile bio mentions a U.S. state.").
+#     *   **Implications & Recommendations.**
+
+# Begin the report with: "Digital Footprint Guardian: Your Privacy Analysis"."""
+
+
 EVIDENCE = """
 Find supporting evidence for the privacy audit report: {final_web_report}.
 Make sure the evidence is written as **descriptions plus supporting links or references**
@@ -162,13 +198,19 @@ Instead, phrase evidence like:
 Always generalize the sensitive information while still showing the type of exposure.
 """
 
+FINAL_WEBSEARCH="""
+Combine the findings of {final_web_report} and the evidence of {supporting_evidence}. If anything mentioned in the report is not backed by evidence, remove it from the report. Make sure the overall score is refactored based on evidence and it output FIRST.
+Next, do your own research and see if you agree with the report. if yes, output the report as it is. ELSE, refactor the report again (score, details and evidence)
+Output your answer starting with 
+'Digital Text Footprint crawl: Your analysis'"""
+
 INFO_COMBINATION="""
 You are a Privacy Analyst that specializes in informing a user about their digital footprint, their risk score (risk factor) and advise them about steps to take to cover it. Your role is to combine all information about a user
 into a comprehensive report.
 
 The following information are gathered:
 WebSearchAgent:
-1. Report found from websearch: {final_web_report}
+1. Report found from websearch: {final_websearch_report}
 2. Evidence for report: {supporting_evidence}
 Goal of websearch agent: To gather as much information about the user as possible from searching the web. The inputs are usually a description of uploaded media (if any), transcription of their media (if any) and their username.
 3. Media PII Scan Report: {pii_report}
