@@ -8,4 +8,10 @@ google-genai
 python-dotenv
 google-adk
 soundfile
+<<<<<<< HEAD
 >>>>>>> 70abc5de120bec3abc522c49104c5a520604d26d
+=======
+fastapi
+uvicorn
+python-multipart
+>>>>>>> 4ecdcd0e4df927c17bc7dbd97f9cf10fcb580f43
