@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 import os
-=======
->>>>>>> 70abc5de120bec3abc522c49104c5a520604d26d
 import json
 import re
 import sys
@@ -46,62 +43,62 @@ class PIIDetectionAgent:
         self.ocr_reader = easyocr.Reader(['en'])
         logger.info("EasyOCR model loaded successfully.")
 
-<<<<<<< HEAD
 
 
 
-=======
->>>>>>> 70abc5de120bec3abc522c49104c5a520604d26d
     def _initialize_pii_patterns(self):
-        """Initializes comprehensive, OCR-forgiving regex patterns."""
+        """Initializes patterns with confidence scores."""
         self.pii_patterns = {
             'singapore_nric': {
-                'pattern': r'\b[5STFG6][0-9OIl]{7}[A-Z]\b', 
-                'description': 'Singapore NRIC', 'risk': 'high'
-            },
-            'singapore_phone': {
-                'pattern': r'(?:\+?65[\s-]?)?[8B9][0-9]{3}[\s-]?[0-9]{4}\b', 
-                'description': 'Singapore phone number', 'risk': 'medium'
-            },
-            'email': {
-                'pattern': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', 
-                'description': 'Email address', 'risk': 'medium'
+                'pattern': r'\b[STFG56][0-9OIl]{7}[A-Z]\b', 
+                'description': 'Singapore NRIC', 'risk': 'high', 'confidence': 0.95
             },
             'credit_card': {
                 'pattern': r'\b(?:[0-9OIl]{4}[\s-]?){3}[0-9OIl]{4}\b', 
-                'description': 'Credit card number', 'risk': 'high'
+                'description': 'Credit card number', 'risk': 'high', 'confidence': 0.95
             },
-            'address_postal_standalone': {
-                'pattern': r'\b\d{3}\s?\d{3}\b',
-                'description': 'Standalone Postal Code', 'risk': 'medium'
+            'address_unit_no': {
+                'pattern': r'#?\s*\d{1,3}\s*-\s*\d{1,4}[A-Za-z]?\b',
+                'description': 'Address Unit Number', 'risk': 'high', 'confidence': 0.85
             },
-            'address_street_name': {
-                'pattern': r'\b\d{0,4}\s?[A-Za-z\s,]+(?:Avenue|Ave|Road|Rd|Street|St|Drive|Dr|Lane|Ln|Crescent|Cres)\b',
-                'description': 'Street Name/Address Fragment', 'risk': 'medium'
+            'singapore_phone': {
+                'pattern': r'(?:\+?65[\s-]?)?[8B9][0-9OIl]{3}[\s-]?[0-9OIl]{4}\b', 
+                'description': 'Singapore phone number', 'risk': 'medium', 'confidence': 0.75
+            },
+            'email': {
+                'pattern': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', 
+                'description': 'Email address', 'risk': 'medium', 'confidence': 0.9
+            },
+            'address_postal_code': {
+                'pattern': r'\b[5S]?\w?[nN9]\s*[gG]\s*[aA]\s*[pP]\w{0,3}\s*\d{6}\b',
+                'description': 'Postal Code (e.g., Singapore 123456)', 'risk': 'medium', 'confidence': 0.6
+            },
+            'address_street_name_forgiving': {
+                'pattern': r"\b(?:\d{1,4}\s+)?[A-Za-z\s']+\s+(?:R(oa)?d|S(tr?ee)?t|A(ve?n?ue)?|Dr(ive)?|L(ane|n)?|B(ou)?lev?ard|Blvd|Cres(cent)?)\b",
+                'description': 'Street Name/Address', 'risk': 'medium', 'confidence': 0.4
             },
             'address_blk_no': {
-                'pattern': r'\b(?:Block|Blk|B1k|81k)\s*\d+[A-Za-z]?\b',
-                'description': 'Block Number Fragment', 'risk': 'low'
+                'pattern': r'\b(?:B(lock|lk|1k)|8lk)\s*\d+[A-Za-z]?\b',
+                'description': 'Block Number Fragment', 'risk': 'low', 'confidence': 0.5
             },
             'social_media': {
                 'pattern': r'@[A-Za-z0-9_]+', 
-                'description': 'Social media handle', 'risk': 'low'
+                'description': 'Social media handle', 'risk': 'low', 'confidence': 0.6
             },
-            'ip_address': {
-                'pattern': r'\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b', 
-                'description': 'IP address', 'risk': 'medium'
+            'address_keyword_tower': {
+                'pattern': r'\b(T(owe|wne|oue)r)\b',
+                'description': 'Address Keyword: "Tower"', 'risk': 'low', 'confidence': 0.3
+            },
+            'address_keyword_floor': {
+                'pattern': r'\b(F(loo|lour|1oor)r)\b',
+                'description': 'Address Keyword: "Floor"', 'risk': 'low', 'confidence': 0.3
             }
         }
 
-<<<<<<< HEAD
 
 
 
 
-
-
-=======
->>>>>>> 70abc5de120bec3abc522c49104c5a520604d26d
     def detect_textual_pii(self, image: np.ndarray) -> List[Dict[str, Any]]:
         """Extracts text from an image using EasyOCR."""
         findings = []
@@ -123,9 +120,13 @@ class PIIDetectionAgent:
                 
                 for match in matches:
                     finding = {
-                        'type': pii_type, 'value': match.group(), 'description': config['description'],
-                        'risk_level': config['risk'], 'location': None, 'confidence': 0.9
-                    }
+                            'type': pii_type, 
+                            'value': match.group(), 
+                            'description': config['description'],
+                            'risk_level': config['risk'], 
+                            'location': None, 
+                            'confidence': config['confidence'] 
+                                }
                     findings.append(finding)
                     logger.info(f"Found {config['description']}: {match.group()}")
 
@@ -134,29 +135,33 @@ class PIIDetectionAgent:
             
         return findings
 
-<<<<<<< HEAD
 
 
 
 
 
 
-=======
->>>>>>> 70abc5de120bec3abc522c49104c5a520604d26d
-    def _calculate_risk_level(self, textual_pii_findings: List) -> str:
-        """Calculates the overall risk level based on findings."""
-        high_risk_count = 0
-        medium_risk_count = 0
+    def _calculate_risk_level(self, textual_pii_findings: List, low_risk_threshold: int = 3) -> str:
+        """
+        Calculates overall risk. Elevates risk to 'medium' if multiple 'low'
+        risk items are found.
+        """
         
-        for pii in textual_pii_findings:
-            if pii['risk_level'] == 'high': high_risk_count += 1
-            elif pii['risk_level'] == 'medium': medium_risk_count += 1
+        risk_levels_found = {pii['risk_level'] for pii in textual_pii_findings}
+
+        if 'high' in risk_levels_found:
+            return 'high'
+        if 'medium' in risk_levels_found:
+            return 'medium'
+        
+        low_risk_count = sum(1 for pii in textual_pii_findings if pii['risk_level'] == 'low')
+        if low_risk_count >= low_risk_threshold:
+            return 'medium' 
+        elif low_risk_count > 0:
+            return 'low'
+
+        return 'none'
                 
-        if high_risk_count > 0: return 'high'
-        if medium_risk_count > 1: return 'medium'
-        return 'low'
-            
-<<<<<<< HEAD
             
             
             
@@ -166,20 +171,6 @@ class PIIDetectionAgent:
     def analyze_image(self, image: np.ndarray) -> Dict[str, Any]:
         """Analyzes a single image frame for PII."""
         
-=======
-    def analyze_image(self, image_path: str) -> Dict[str, Any]:
-        """Main method to analyze an image for PII."""
-        logger.info(f"Analyzing image: {image_path}")
-        
-        path = Path(image_path)
-        if not path.exists():
-            raise FileNotFoundError(f"Image not found: {image_path}")
-            
-        image = cv2.imread(str(path))
-        if image is None:
-            raise ValueError(f"Failed to load image: {image_path}")
-
->>>>>>> 70abc5de120bec3abc522c49104c5a520604d26d
         textual_pii_findings = self.detect_textual_pii(image)
         risk_level = self._calculate_risk_level(textual_pii_findings)
         
@@ -196,14 +187,13 @@ class PIIDetectionAgent:
             risk_level=risk_level
         )
         
-<<<<<<< HEAD
         return asdict(report)
         
     
     
     
     
-    def analyze_video(self, video_path: str, scans_per_second: int = 1) -> List[Dict[str, Any]]:
+    def analyze_video(self, video_path: str, scans_per_second: int = 1) -> Dict[str, Any]:
         """
         Analyzes a video for PII by intelligently sampling frames .
 
@@ -215,10 +205,8 @@ class PIIDetectionAgent:
         Returns:
             A list of PII reports for each frame that contained PII.
         """
-        
-        
-        logger.info(f"Analyzing video: {video_path} at {scans_per_second} scans/sec")
-        
+        logger.info(f"Analyzing video for consolidated report: {video_path}")
+    
         path = Path(video_path)
         if not path.exists():
             raise FileNotFoundError(f"Video not found: {video_path}")
@@ -228,49 +216,76 @@ class PIIDetectionAgent:
             raise IOError(f"Could not open video file: {video_path}")
 
         video_fps = cap.get(cv2.CAP_PROP_FPS)
-        if video_fps == 0:
-            logger.warning("Could not determine video FPS. Defaulting to 30.")
-            video_fps = 30 # Set a default if FPS is not available
-
+        video_fps = 30 if video_fps == 0 else video_fps
         frame_interval = int(video_fps / scans_per_second)
         logger.info(f"Video FPS: {video_fps:.2f}, analyzing every {frame_interval} frames.")
         
+        all_findings_raw = []
         frame_count = 0
-        all_findings = []
 
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
-                break # End of video
+                break
 
-            # The core sampling logic
             if frame_count % frame_interval == 0:
                 timestamp_ms = cap.get(cv2.CAP_PROP_POS_MSEC)
                 logger.info(f"Analyzing frame {frame_count} at timestamp {timestamp_ms/1000:.2f}s...")
                 
-                report = self.analyze_image(frame)
+                frame_findings = self.detect_textual_pii(frame)
                 
-                # Only store reports where PII was actually found
-                if report['summary']['total_findings'] > 0:
-                    report['frame_number'] = frame_count
-                    report['timestamp_seconds'] = round(timestamp_ms / 1000, 2)
-                    all_findings.append(report)
+                for finding in frame_findings:
+                    finding['timestamp_seconds'] = round(timestamp_ms / 1000, 2)
+                    finding['frame_number'] = frame_count
+                    all_findings_raw.append(finding)
 
             frame_count += 1
             
         cap.release()
-        logger.info(f"Video analysis complete. Found PII in {len(all_findings)} sampled frames.")
-        return all_findings
+
+        unique_findings = []
+        seen = set()
+        for finding in all_findings_raw:
+            finding_key = (finding['type'], finding['value'])
+            if finding_key not in seen:
+                unique_findings.append(finding)
+                seen.add(finding_key)
+        
+
+        risk_order = {'high': 2, 'medium': 1, 'low': 0, 'none': -1}
+
+        #Sort all unique findings by their risk level in descending order
+        sorted_findings = sorted(
+            unique_findings, 
+            key=lambda f: risk_order.get(f['risk_level'], -1), 
+            reverse=True
+        )
+
+        #Take only the top 3 highest-risk findings
+        top_3_findings = sorted_findings[:3]
+        
+        logger.info(f"Consolidated report to top {len(top_3_findings)} highest-risk findings.")
+
+        #Generate the final summary based on the top 3 findings
+        final_risk_level = self._calculate_risk_level(top_3_findings)
+        final_summary = {
+            'total_unique_findings_in_video': len(unique_findings),
+            'showing_top_findings': len(top_3_findings),
+            'risk_level': final_risk_level,
+            'recommendations': self._generate_recommendations(top_3_findings)
+        }
+        
+        final_report = PIIReport(
+            textual_pii_findings=top_3_findings, 
+            summary=final_summary,
+            risk_level=final_risk_level
+        )
+        
+        return asdict(final_report)
         
         
         
-=======
-        result = asdict(report)
-        result['image_path'] = str(path.absolute())
         
-        logger.info(f"Analysis complete. Risk level: {risk_level}")
-        return result
->>>>>>> 70abc5de120bec3abc522c49104c5a520604d26d
         
     def _generate_recommendations(self, textual_pii: List) -> List[str]:
         """Generates privacy recommendations based on findings."""
