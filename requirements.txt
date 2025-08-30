@@ -1,4 +1,11 @@
+<<<<<<< HEAD
 python = 3.11
 paddlepaddle
 numpy<2
 paddleocr
+=======
+google-genai
+python-dotenv
+google-adk
+soundfile
+>>>>>>> 70abc5de120bec3abc522c49104c5a520604d26d

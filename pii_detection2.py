@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 import os
+=======
+>>>>>>> 70abc5de120bec3abc522c49104c5a520604d26d
 import json
 import re
 import sys
@@ -43,9 +46,12 @@ class PIIDetectionAgent:
         self.ocr_reader = easyocr.Reader(['en'])
         logger.info("EasyOCR model loaded successfully.")
 
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> 70abc5de120bec3abc522c49104c5a520604d26d
     def _initialize_pii_patterns(self):
         """Initializes comprehensive, OCR-forgiving regex patterns."""
         self.pii_patterns = {
@@ -87,12 +93,15 @@ class PIIDetectionAgent:
             }
         }
 
+<<<<<<< HEAD
 
 
 
 
 
 
+=======
+>>>>>>> 70abc5de120bec3abc522c49104c5a520604d26d
     def detect_textual_pii(self, image: np.ndarray) -> List[Dict[str, Any]]:
         """Extracts text from an image using EasyOCR."""
         findings = []
@@ -125,12 +134,15 @@ class PIIDetectionAgent:
             
         return findings
 
+<<<<<<< HEAD
 
 
 
 
 
 
+=======
+>>>>>>> 70abc5de120bec3abc522c49104c5a520604d26d
     def _calculate_risk_level(self, textual_pii_findings: List) -> str:
         """Calculates the overall risk level based on findings."""
         high_risk_count = 0
@@ -144,6 +156,7 @@ class PIIDetectionAgent:
         if medium_risk_count > 1: return 'medium'
         return 'low'
             
+<<<<<<< HEAD
             
             
             
@@ -153,6 +166,20 @@ class PIIDetectionAgent:
     def analyze_image(self, image: np.ndarray) -> Dict[str, Any]:
         """Analyzes a single image frame for PII."""
         
+=======
+    def analyze_image(self, image_path: str) -> Dict[str, Any]:
+        """Main method to analyze an image for PII."""
+        logger.info(f"Analyzing image: {image_path}")
+        
+        path = Path(image_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Image not found: {image_path}")
+            
+        image = cv2.imread(str(path))
+        if image is None:
+            raise ValueError(f"Failed to load image: {image_path}")
+
+>>>>>>> 70abc5de120bec3abc522c49104c5a520604d26d
         textual_pii_findings = self.detect_textual_pii(image)
         risk_level = self._calculate_risk_level(textual_pii_findings)
         
@@ -169,6 +196,7 @@ class PIIDetectionAgent:
             risk_level=risk_level
         )
         
+<<<<<<< HEAD
         return asdict(report)
         
     
@@ -236,6 +264,13 @@ class PIIDetectionAgent:
         
         
         
+=======
+        result = asdict(report)
+        result['image_path'] = str(path.absolute())
+        
+        logger.info(f"Analysis complete. Risk level: {risk_level}")
+        return result
+>>>>>>> 70abc5de120bec3abc522c49104c5a520604d26d
         
     def _generate_recommendations(self, textual_pii: List) -> List[str]:
         """Generates privacy recommendations based on findings."""
