@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO)
 # prompt=ti.input_text_prompt("kiwiiclaire", "description/description1.txt", "description/output1.txt")
 # logging.info("Text input prepared successfully.")
 
-def generate_text_extraction_prompt(video=True, username="kiwiiclaire"):
+def generate_text_extraction_prompt(video=True, username=str):
     """
     Extracts audio from videos then text from audio then combines video audio and video description into a single prompt. 
     Arguments: 
@@ -34,19 +34,19 @@ def generate_text_extraction_prompt(video=True, username="kiwiiclaire"):
     if video:
         prompt=ExtractionText(
         username=username,
-        video_path="media/video1.mp4",
-        description_path="description/description1.txt",
-        out_prefix="output1",
-        audio_filename="output1.wav",
+        video_path="media/video2.MOV",
+        description_path="description/description2.txt",
+        out_prefix="output2",
+        audio_filename="output2.wav",
         overwrite=True,
         ).run()["combined_text"]
     else:
-        prompt=Path("description/description1.txt").read_text(encoding="utf-8")
+        prompt=Path("description/description2.txt").read_text(encoding="utf-8")
         prompt="Tik Tok username:" + username + ", media description: " + prompt
 
     return prompt
 
-prompt=generate_text_extraction_prompt(video=False)
+prompt=generate_text_extraction_prompt(video=True, username="koji.and.yuki")
 
 
 APP_NAME="google_search_agent"

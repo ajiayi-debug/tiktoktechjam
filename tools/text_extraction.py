@@ -15,19 +15,37 @@ class SpeechToText:
         self.client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
     def transcribe_audio(self, audio_file_path, output):
-        myfile = self.client.files.upload(file=audio_file_path)
-        prompt = 'Generate a transcript of the speech.'
+        try:
+            # Upload the file to the server
+            print(f"Uploading {audio_file_path}...")
+            myfile = self.client.files.upload(file=audio_file_path)
+            print(f"Successfully uploaded file: {myfile.name}")
 
-        response = self.client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=[prompt, myfile]
-        )
+            prompt = 'Generate a transcript of the speech.'
 
-        # Save to .txt
-        with open(f"description/{output}.txt", "w", encoding="utf-8") as f:
-            f.write(response.text)
+            # Process the audio file for transcription
+            response = self.client.models.generate_content(
+                model='gemini-1.5-flash',
+                contents=[prompt, myfile]
+            )
 
-        print(f" Saved to description/{output}.txt")
+            # Save the transcript to a .txt file
+            output_dir = "description"
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+
+            output_filepath = os.path.join(output_dir, f"{output}.txt")
+            with open(output_filepath, "w", encoding="utf-8") as f:
+                f.write(response.text)
+
+            print(f"Saved transcript to {output_filepath}")
+
+        finally:
+            # Delete the remotely uploaded file
+            if 'myfile' in locals() and myfile:
+                print(f"Deleting remote file: {myfile.name}")
+                self.client.files.delete(name=myfile.name)
+                print("Remote file deleted.")
 
 class AudioExtractor:
     """Extract audio from video files."""
