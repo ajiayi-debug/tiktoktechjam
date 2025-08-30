@@ -5,24 +5,48 @@ import asyncio
 from agents.websearch import footprint_pipeline
 import os
 from google.genai import types
-from tools.text_extraction import SpeechToText, AudioExtractor, TextInput
+from tools.text_extraction import ExtractionText
 import logging
 from pathlib import Path
 logging.basicConfig(level=logging.INFO)
 
 
-video_file_path = "media/video1.mp4"
-audio_file_path = "media/output1.wav"
-output = "output1"
-ae=AudioExtractor()
-ae.extract_audio(video_file_path, audio_file_path)
-logging.info("Audio extracted successfully.")
-stt = SpeechToText()
-stt.transcribe_audio(audio_file_path, output)
-logging.info("Transcription completed successfully.")
-ti=TextInput()
-prompt=ti.input_text_prompt("kiwiiclaire", "description/description1.txt", "description/output1.txt")
-logging.info("Text input prepared successfully.")
+# video_file_path = "media/video1.mp4"
+# audio_file_path = "media/output1.wav"
+# output = "output1"
+# ae=AudioExtractor()
+# ae.extract_audio(video_file_path, audio_file_path)
+# logging.info("Audio extracted successfully.")
+# stt = SpeechToText()
+# stt.transcribe_audio(audio_file_path, output)
+# logging.info("Transcription completed successfully.")
+# ti=TextInput()
+# prompt=ti.input_text_prompt("kiwiiclaire", "description/description1.txt", "description/output1.txt")
+# logging.info("Text input prepared successfully.")
+
+def generate_text_extraction_prompt(video=True, username="kiwiiclaire"):
+    """
+    Extracts audio from videos then text from audio then combines video audio and video description into a single prompt. 
+    Arguments: 
+    video (bool) (True means media is a video, need to extract audio then text from video. False means no extraction needed.)
+    username (str) (The TikTok username to be included in the prompt.)
+    """
+    if video:
+        prompt=ExtractionText(
+        username=username,
+        video_path="media/video1.mp4",
+        description_path="description/description1.txt",
+        out_prefix="output1",
+        audio_filename="output1.wav",
+        overwrite=True,
+        ).run()["combined_text"]
+    else:
+        prompt=Path("description/description1.txt").read_text(encoding="utf-8")
+        prompt="Tik Tok username:" + username + ", media description: " + prompt
+
+    return prompt
+
+prompt=generate_text_extraction_prompt(video=False)
 
 
 APP_NAME="google_search_agent"

@@ -1,10 +1,13 @@
+from agents import prompt
 from google.adk.agents import Agent
 from google.adk.tools import google_search, url_context
 import os
 import certifi
 from dotenv import load_dotenv
 from agents.prompt import WEBSEARCH, QUERY_GENERATE,EXTRACT_INFO,SYNTHESIZE,EVIDENCE
+from tools.text_extraction import ExtractionText
 from google.adk.agents import SequentialAgent
+from pathlib import Path
 load_dotenv()
 
 os.environ['SSL_CERT_FILE'] = certifi.where()
@@ -16,6 +19,8 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 #     instruction=VARIATION,
 #     output_key="variations"
 # )
+
+
 
 info_extractor = Agent(
     name="info_extractor_agent",
@@ -45,7 +50,7 @@ synthesis_and_report = Agent(
     model="gemini-2.5-pro", # Needs the best model for the final report
     description="Agent that analyzes found social media profiles and generates a final privacy report.",
     instruction=SYNTHESIZE,
-    output_key="final_report",
+    output_key="final_web_report",
     tools=[google_search] # It uses search to find the URLS and url_context to look into the URLs
 )
 

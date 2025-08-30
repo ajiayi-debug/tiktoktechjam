@@ -71,16 +71,61 @@ class TextInput:
         self.text = f"Tik Tok username: {username}, media description: {description_content}, transcript: {transcript_content}"
         return self.text
 
+class ExtractionText:
+    def __init__(self, username: str, video_path: str, description_path: str,
+                 out_prefix: str = "output1", audio_filename: str = "output1.wav",
+                 overwrite: bool = False):
+        self.username = username
+        self.video_path = Path(video_path)
+        self.description_path = Path(description_path)
+        self.out_prefix = out_prefix
+        self.audio_path = Path("media") / audio_filename
+        self.transcript_txt = Path("description") / f"{out_prefix}.txt"
+        self.overwrite = overwrite
+
+        Path("media").mkdir(parents=True, exist_ok=True)
+        Path("description").mkdir(parents=True, exist_ok=True)
+
+        if not self.video_path.exists():
+            raise FileNotFoundError(self.video_path)
+        if not self.description_path.exists():
+            raise FileNotFoundError(self.description_path)
+
+        self.audio = AudioExtractor()
+        self.stt = SpeechToText()
+        self.ti = TextInput()
+
+    def run(self) -> dict:
+        # extract
+        if self.overwrite or not self.audio_path.exists():
+            self.audio.extract_audio(str(self.video_path), str(self.audio_path))
+            logging.info("Audio extracted successfully.")
+
+        # transcribe
+        if self.overwrite or not self.transcript_txt.exists():
+            self.stt.transcribe_audio(str(self.audio_path), self.out_prefix)
+            logging.info("Transcription completed successfully.")
+
+        # combine
+        combined = self.ti.input_text_prompt(
+            self.username, str(self.description_path), str(self.transcript_txt)
+        )
+        combined_path = self.transcript_txt.parent / f"{self.out_prefix}_combined.txt"
+        combined_path.write_text(combined, encoding="utf-8")
+        logging.info("Text input prepared successfully.")
+        return {
+            "audio_path": str(self.audio_path),
+            "transcript_path": str(self.transcript_txt),
+            "combined_path": str(combined_path),
+            "combined_text": combined,
+        }
+
 if __name__ == "__main__":
-    video_file_path = "media/video1.mp4"
-    audio_file_path = "media/output1.wav"
-    output = "output1"
-    ae=AudioExtractor()
-    ae.extract_audio(video_file_path, audio_file_path)
-    logging.info("Audio extracted successfully.")
-    stt = SpeechToText()
-    stt.transcribe_audio(audio_file_path, output)
-    logging.info("Transcription completed successfully.")
-    ti=TextInput()
-    ti.input_text_prompt("kiwiiclaire", "description/description1.txt", "description/output1.txt")
-    logging.info("Text input prepared successfully.")
+    result = ExtractionText(
+        username="kiwiiclaire",
+        video_path="media/video1.mp4",
+        description_path="description/description1.txt",
+        out_prefix="output1",
+        audio_filename="output1.wav",
+        overwrite=True,
+    ).run()
