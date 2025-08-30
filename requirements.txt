@@ -1,0 +1,4 @@
+python = 3.11
+paddlepaddle
+numpy<2
+paddleocr
