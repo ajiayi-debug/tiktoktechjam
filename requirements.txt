@@ -2,3 +2,6 @@ google-genai
 python-dotenv
 google-adk
 soundfile
+fastapi
+uvicorn
+python-multipart
