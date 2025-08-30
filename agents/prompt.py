@@ -210,9 +210,13 @@ into a comprehensive report.
 
 The following information are gathered:
 WebSearchAgent:
-Report found from websearch: {final_websearch_web_report}
-Evidence for report: {supporting_evidence}
+1. Report found from websearch: {final_websearch_report}
+2. Evidence for report: {supporting_evidence}
 Goal of websearch agent: To gather as much information about the user as possible from searching the web. The inputs are usually a description of uploaded media (if any), transcription of their media (if any) and their username.
+3. Media PII Scan Report: {pii_report}
+The Media PII Scan Report would return a json, pay attention to the Summary portin which has the key risk_level aaswell as recommendations these are the key statistics that you will be using to make your judgement.
+4. Summary of the previous analysis in this session: {PREVIOUS_ANALYSIS_SUMMARY}
+
 
 Output a score, detailed report of findings and finally advise to the user.
 """
