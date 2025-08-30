@@ -7,5 +7,7 @@ python-dotenv
 google-adk
 soundfile
 fastapi
+fastapi[standard]
 uvicorn
 python-multipart
+ffmpeg-python

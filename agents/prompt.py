@@ -102,7 +102,7 @@ input: {refined_queries}
 """
 
 # SYNTHESIZE = """
-# You are the private investigator. Your final task is to dig up as much information about the user as possible through the internet. 
+# You are the private investigator. Your final task is to dig up as much information about the user as possible through the internet.
 # You are given a JSON object containing social media URLs found in the previous step: {search_results}
 # You are also given the initial user information: {extracted_info}
 
@@ -198,13 +198,13 @@ Instead, phrase evidence like:
 Always generalize the sensitive information while still showing the type of exposure.
 """
 
-FINAL_WEBSEARCH="""
+FINAL_WEBSEARCH = """
 Combine the findings of {final_web_report} and the evidence of {supporting_evidence}. If anything mentioned in the report is not backed by evidence, remove it from the report. Make sure the overall score is refactored based on evidence and it output FIRST.
 Next, do your own research and see if you agree with the report. if yes, output the report as it is. ELSE, refactor the report again (score, details and evidence)
 Output your answer starting with 
 'Digital Text Footprint crawl: Your analysis'"""
 
-INFO_COMBINATION="""
+INFO_COMBINATION = """
 You are a Privacy Analyst that specializes in informing a user about their digital footprint, their risk score (risk factor) and advise them about steps to take to cover it. Your role is to combine all information about a user
 into a comprehensive report.
 
@@ -219,3 +219,52 @@ The Media PII Scan Report would return a json, pay attention to the Summary port
 
 Output a score, detailed report of findings and finally advise to the user.
 """
+
+PROMPT_VISUAL_HINTS = """
+You are a privacy scout. Given 1–N images, extract ONLY **soft signifiers** that
+could help an attacker narrow location/identity WITHOUT using faces or explicit PII.
+Examples: distinctive tree species/shape, skyline silhouettes, mountain profiles,
+building facades/patterns, murals, shop signs *shape/color but not the text content*,
+road markings style, lamp posts, bus-stop designs, license plate *country format only*,
+weather/vegetation hints, time-of-day shadows, floor tiles, unique furniture.
+
+Rules:
+- DO NOT read or transcribe text; describe shapes/colors/patterns instead.
+- DO NOT identify people; mention count (e.g., “2 people”) is OK.
+- Focus on *recognisability/rarity* of features.
+- For each hint provide:
+  - name (short): e.g., "rain-tree canopy", "orange hex tile"
+  - description: concise visual description (no text transcription)
+  - rarity_estimate: common / uncommon / unique_in_region
+  - geo_signal_strength: 1–5 (how much it helps geolocate)
+  - retrieval_terms: 3–8 generic search terms (no quoted text)
+  - confidence: 1–5
+Return JSON list under key "hints".
+"""
+
+PROMPT_HINT_RESEARCH = """
+You are a web researcher. For each hint (name, description, retrieval_terms),
+assess how easily it could lead to a precise place or small area *in general*.
+Consider distinctiveness, prior online coverage (e.g., iconic murals/landmarks),
+and likely reverse-image-searchability.
+
+For EACH hint, output:
+- name
+- geo_traceability: low/medium/high (can this likely lead to a spot?)
+- rationale: 2–4 bullet points
+- suggested_mitigations: 1–3 concise steps (crop angle, blur region, background change)
+Return JSON list under "findings".
+"""
+
+PROMPT_RISK_SUMMARY = """
+You are a privacy risk analyst. Combine the visual hints and research findings.
+Score overall risk that the images enable *location or routine inference*.
+
+Output JSON object:
+- overall_risk: low/medium/high
+- key_drivers: 3–5 bullets
+- per_hint: [{name, risk: low/medium/high, reason}]
+- recommended_mitigations: 3–6 prioritized actions
+Keep reasoning concise and actionable.
+"""
+
