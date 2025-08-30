@@ -46,7 +46,7 @@ Example Output:
 """
 QUERY_GENERATE = """
 You are an expert OSINT analyst who creates Google Search queries to find a person's digital footprint.
-You will be given a JSON object with extracted user information.
+You will be given a JSON object with extracted user information. The username is from a tik tok account so make sure you LOOK for a tik tok account connected to the user.
 Combine these pieces of information to create highly specific search queries designed to find social media profiles.
 
 Input will be in the format:
@@ -63,6 +63,7 @@ Input:
 }
 Output:
 [
+    "cayydences tiktok.com/@cayydences",
     "cayydences Singapore Instagram",
     "cayydences TikTok influencer",
     "site:linkedin.com cayydences Singapore",
@@ -150,7 +151,7 @@ Begin the report with: "Digital Footprint Guardian: Your Privacy Analysis".
 """
 
 EVIDENCE = """
-Find supporting evidence for the privacy audit report: {final_report}.
+Find supporting evidence for the privacy audit report: {final_web_report}.
 Make sure the evidence is written as **descriptions plus supporting links or references**
 that are already public in the user’s provided data. Do not output real names, addresses,
 or anything that would fully re-identify the person.
@@ -159,4 +160,17 @@ Instead, phrase evidence like:
 - “Instagram bio mentions ‘student life’, link: …”
 
 Always generalize the sensitive information while still showing the type of exposure.
+"""
+
+INFO_COMBINATION="""
+You are a Privacy Analyst that specializes in informing a user about their digital footprint, their risk score (risk factor) and advise them about steps to take to cover it. Your role is to combine all information about a user
+into a comprehensive report.
+
+The following information are gathered:
+WebSearchAgent:
+Report found from websearch: {final_web_report}
+Evidence for report: {supporting_evidence}
+Goal of websearch agent: To gather as much information about the user as possible from searching the web. The inputs are usually a description of uploaded media (if any), transcription of their media (if any) and their username.
+
+Output a score, detailed report of findings and finally advise to the user.
 """
