@@ -95,7 +95,7 @@ class ImageSoftHintsAgent(LlmAgent):
         super().__init__(
             name="ImageSoftHintsAgent",
             description="Extracts soft privacy signifiers from local images/frames (no PII).",
-            model="gemini-2.0-flash",
+            model="gemini-2.5-pro",
             instruction=PROMPT_VISUAL_HINTS,
         )
         self.image_path = image_path
@@ -132,7 +132,7 @@ class HintResearchAgent(LlmAgent):
         super().__init__(
             name="HintResearchAgent",
             description="Researches traceability of visual hints online.",
-            model="gemini-2.0-flash",
+            model="gemini-2.5-pro",
             instruction=PROMPT_HINT_RESEARCH,
         )
 
@@ -163,7 +163,7 @@ class RiskSummaryAgent(LlmAgent):
         super().__init__(
             name="RiskSummaryAgent",
             description="Synthesizes research into overall privacy risk.",
-            model="gemini-2.0-flash",
+            model="gemini-2.5-pro",
             instruction=PROMPT_RISK_SUMMARY,
         )
 
