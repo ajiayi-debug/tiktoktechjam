@@ -1,9 +1,13 @@
-// src/components/ShareComposer.tsx
 import { useCallback, useRef, useState } from '@lynx-js/react';
 import type { DangerScore, UploadedMedia } from '../types.js';
 import { Input, Textarea, Video } from './Primitives.js';
 
 type LynxBindEvt = { detail?: { value?: string } };
+
+// narrow helpers (no `any`)
+function hasClick(x: unknown): x is { click: () => void } {
+  return !!x && typeof x === 'object' && 'click' in x && typeof (x as { click?: unknown }).click === 'function';
+}
 
 export default function ShareComposer(props: {
   busy: boolean;
@@ -11,6 +15,8 @@ export default function ShareComposer(props: {
   onScan: (text: string, media: UploadedMedia[]) => void;
   onCensor: () => void;
 }) {
+  const { busy, score, onScan, onCensor } = props;
+
   const [text, setText] = useState('');
   const [location, setLocation] = useState('Example Street, City');
   const [media, setMedia] = useState<UploadedMedia[]>([]);
@@ -27,14 +33,10 @@ export default function ShareComposer(props: {
   };
 
   const pickFiles = useCallback(() => {
+    // eslint-disable-next-line no-unused-expressions
     'background only';
     const el = inputRef.current;
-    // Narrow and call .click() if present
-    if (el && typeof (el as HTMLInputElement).click === 'function') {
-      (el as HTMLInputElement).click();
-    } else if (el && typeof (el as { click?: () => void }).click === 'function') {
-      (el as { click?: () => void }).click?.();
-    }
+    if (hasClick(el)) el.click();
   }, []);
 
   const onFiles = useCallback((files: FileList | null) => {
@@ -47,12 +49,13 @@ export default function ShareComposer(props: {
   }, []);
 
   const scan = useCallback(() => {
+    // eslint-disable-next-line no-unused-expressions
     'background only';
-    props.onScan(text, media);
-  }, [props, text, media]);
+    onScan(text, media);
+  }, [onScan, text, media]);
 
   const first = media[0];
-  const risk = props.score?.value ?? null;
+  const risk = score?.value ?? null;
 
   return (
     <view className="card">
@@ -95,7 +98,7 @@ export default function ShareComposer(props: {
           </view>
 
           {/* Loading status during scan */}
-          {props.busy && (
+          {busy && (
             <view className="status">
               <text className="small muted">
                 Loading (searching for related info about user on the internet)
@@ -104,7 +107,7 @@ export default function ShareComposer(props: {
           )}
 
           {/* Risk banner after results */}
-          {!props.busy && risk !== null && (
+          {!busy && risk !== null && (
             <view className="risk-banner">
               <view className="risk-header">
                 <text className="fw-700">Privacy Risk:</text>
@@ -121,7 +124,7 @@ export default function ShareComposer(props: {
               </text>
 
               <view className="risk-actions">
-                <view className="btn btn-primary" bindtap={props.onCensor}>
+                <view className="btn btn-primary" bindtap={onCensor}>
                   <text>Censor sensitive info</text>
                 </view>
               </view>
@@ -135,22 +138,18 @@ export default function ShareComposer(props: {
               className={`btn ${text || media.length ? 'btn-primary' : ''}`}
               bindtap={scan}
             >
-              <text>{props.busy ? 'Scanning…' : 'Scan for risks'}</text>
+              <text>{busy ? 'Scanning…' : 'Scan for risks'}</text>
             </view>
 
-            {/* hidden file picker */}
+            {/* hidden file picker (no inline object style) */}
             <Input
               ref={inputRef}
               type="file"
               accept="image/*,video/*"
-              className="hidden-input"                    // instead of style={{ display: 'none' }}
-              onChange={(e) => {                          // robust: works in Lynx + web
-                const evt = e as {
-                  currentTarget?: { files?: FileList | null };
-                  target?: { files?: FileList | null };
-                };
-                onFiles(evt.currentTarget?.files ?? evt.target?.files ?? null);
-              }}
+              className="hidden-input"
+              onChange={(e: Event & { currentTarget: HTMLInputElement; target: HTMLInputElement }) =>
+                onFiles(e.currentTarget.files)
+              }
             />
           </view>
         </view>

@@ -25,15 +25,30 @@ function getValue(e: LynxInputEvent | WebTextInputEvent): string {
   }
   if (isObject(e) && 'currentTarget' in e) {
     const ct = (e as WebTextInputEvent).currentTarget;
-    // HTMLInputElement & HTMLTextAreaElement both have .value
     return (ct as HTMLInputElement | HTMLTextAreaElement).value ?? '';
   }
   return '';
 }
 
-/* ---------- Shared base props ---------- */
+/* ---------- Style helpers ---------- */
 
-type Style = Record<string, string | number> | string;
+type StyleObject = Record<string, string | number>;
+type Style = StyleObject | string;
+
+/** Convert a style object to a CSS string (safe for Lynx native nodes) */
+function toStyleString(style: unknown): string | undefined {
+  if (!isObject(style)) return typeof style === 'string' ? style : undefined;
+  const entries = Object.entries(style as StyleObject)
+    .filter(([, v]) => v !== undefined && v !== null)
+    .map(([k, v]) => `${camelToKebab(k)}:${String(v)}`);
+  return entries.length ? entries.join(';') : undefined;
+}
+
+function camelToKebab(s: string): string {
+  return s.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
+}
+
+/* ---------- Shared base props ---------- */
 
 type BaseProps = {
   class?: string;
@@ -66,10 +81,16 @@ type InputProps = BaseProps & {
 };
 
 export function Input(props: InputProps) {
-  const { className, bindinput, onInput, onChange, ...rest } = props;
+  const { className, bindinput, onInput, onChange, style, ...rest } = props;
 
   const out: Record<string, unknown> = { ...rest };
+
+  // Map className -> class
   if (className && out.class === undefined) out.class = className;
+
+  // Coerce object style to string (prevents Lynx setStyle crashes on <input>)
+  const s = toStyleString(style);
+  if (s !== undefined) out.style = s;
 
   if (bindinput) {
     out.bindinput = (e: LynxInputEvent | WebTextInputEvent) =>
@@ -95,10 +116,15 @@ type TextareaProps = BaseProps & {
 };
 
 export function Textarea(props: TextareaProps) {
-  const { className, bindinput, onInput, ...rest } = props;
+  const { className, bindinput, onInput, style, ...rest } = props;
 
   const out: Record<string, unknown> = { ...rest };
+
   if (className && out.class === undefined) out.class = className;
+
+  // Coerce object style to string for <textarea> as well (safer on device)
+  const s = toStyleString(style);
+  if (s !== undefined) out.style = s;
 
   if (bindinput) {
     out.bindinput = (e: LynxInputEvent | WebTextInputEvent) =>
@@ -120,8 +146,14 @@ type VideoProps = BaseProps & {
 };
 
 export function Video(props: VideoProps) {
-  const { className, ...rest } = props;
+  const { className, style, ...rest } = props;
   const out: Record<string, unknown> = { ...rest };
+
   if (className && out.class === undefined) out.class = className;
+
+  // Coerce object style to string (prevents setStyle on <video>)
+  const s = toStyleString(style);
+  if (s !== undefined) out.style = s;
+
   return createElement('video', out);
 }

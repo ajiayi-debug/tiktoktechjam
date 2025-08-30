@@ -69,4 +69,7 @@
 .fw-700 { font-weight: 700; }
 .fw-600 { font-weight: 600; }
 
+/* App.css */
 .hidden-input { display: none; }
+.media-boxed { width: 100%; border-radius: 12px; border: 1px solid var(--border); }
+.media-fill  { width: 100%; height: 100%; }
