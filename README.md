@@ -14,6 +14,12 @@ This approach transforms generative AI from a threat into a safeguard — using 
 
 ## Steps to Run 
 
+## Set up environment variables
+Insert `.env` into root with the following parameters:
+```bash
+GOOGLE_API_KEY=[Insert your gemini api key obtained from google ai studio]
+```
+
 ### 🚀 How to Run
 
 ### 1. Backend (FastAPI)
