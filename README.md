@@ -13,7 +13,7 @@ Instead of directly harvesting or leaking information, our solution acts as a pr
 This approach transforms generative AI from a threat into a safeguard — using the same power that enables privacy attacks to instead defend and educate users about their digital footprint.
 
 ## Walkthrough of website
-To walk through our website usage, we shall use a real tiktok account @koji.and.yuki (owned by one of our team mates). This is to show the real impact that our agents connecting to the internet have. 
+To walk through our website usage, we shall use a real tiktok account [@koji.and.yuki](https://www.tiktok.com/@koji.and.yuki) (owned by one of our team mates). This is to show the real impact that our agents connecting to the internet have. 
 This solution has the assumption that the user is *just* about ready to upload their media (after editing, etc) and agree to the privacy terms when it comes to media upload of social media platforms such as tiktok.
 
 ### Frontend Initial Input
