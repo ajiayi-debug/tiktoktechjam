@@ -14,6 +14,12 @@ This approach transforms generative AI from a threat into a safeguard — using 
 
 ## Steps to Run 
 
+## Set up environment variables
+Insert `.env` into root with the following parameters:
+```bash
+GOOGLE_API_KEY=[Insert your gemini api key obtained from google ai studio]
+```
+
 ### 🚀 How to Run
 
 ### 1. Backend (FastAPI)
@@ -26,7 +32,7 @@ You need **Python 3.12** or [`uv`](https://github.com/astral-sh/uv).
 uv sync
 
 # start backend
-uv run fastapi dev recieve_media.py
+uv run fastapi dev receive_media.py
 ```
 
 **Option B – using plain Python/pip:**
@@ -39,7 +45,7 @@ source .venv/bin/activate   # on Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
 # start backend
-fastapi dev recieve_media.py
+fastapi dev receive_media.py
 ```
 
 This runs the API server at **http://localhost:8000**.
