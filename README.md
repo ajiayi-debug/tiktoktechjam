@@ -44,7 +44,9 @@ Utilises machine learning techniques in EasyOCR to detect PII data that the user
 **OCR soft hints agent**
 Made up of multiple subagents located in [agents/soft_hints.py](agents/soft_hints.py), it first detects potential data such as location, etc. Then, it utilises google_search and url_context tool to search for related content to identify (if possible) data about the user (e.g location)
 
-All three agents are utilised as a form of privacy investigators, meant to find dangerous information that can be detected from uploading their media and/or their social media platforms. They act as a red-teamer to try and attack then INFORM the users about their liabilities.
+All three agents are utilised as a form of privacy investigators, meant to find dangerous information that can be detected from uploading their media and/or their social media platforms. They act as a red-teamer to try and attack then INFORM the users about their liabilities. 
+
+For agent trace, check out [findings.txt](findings.txt) (only available when you run on your device as its .gitignored)
 
 ### Frontend Final Output
 
