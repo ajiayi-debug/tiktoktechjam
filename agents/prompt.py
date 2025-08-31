@@ -215,9 +215,22 @@ WebSearchAgent:
 Goal of websearch agent: To gather as much information about the user as possible from searching the web. The inputs are usually a description of uploaded media (if any), transcription of their media (if any) and their username.
 3. Media PII Scan Report: {pii_report}
 The Media PII Scan Report would return a json, pay attention to the Summary portin which has the key risk_level aaswell as recommendations these are the key statistics that you will be using to make your judgement.
+4. Perform a soft hints evaluation using {risk_summary}
 
 
 Output a score, detailed report of findings and finally advise to the user.
+
+Then output the score in the following javascript object form
+
+/** @typedef Object AgentOutput
+ * @property string id
+ * @property ('soft-hints'|'media pii'|'web research') agent
+ * @property string summary
+ * @property number risk // 0-100
+ * @property label: string, url?: string}[] artifacts // downloadable outputs
+ * @property ('queued'|'running'|'done'|'error') status
+*/
+
 """
 
 PROMPT_VISUAL_HINTS = """
@@ -267,4 +280,3 @@ Output JSON object:
 - recommended_mitigations: 3–6 prioritized actions
 Keep reasoning concise and actionable.
 """
-

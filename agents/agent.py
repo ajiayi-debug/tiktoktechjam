@@ -6,7 +6,7 @@ from .prompt import INFO_COMBINATION
 from .websearch import footprint_pipeline
 from google.adk.agents import SequentialAgent, ParallelAgent
 from .media_agent import media_pii_agent
-from soft_hints import soft_hints_evaluator
+from .soft_hints import soft_hints_evaluator
 
 load_dotenv()
 

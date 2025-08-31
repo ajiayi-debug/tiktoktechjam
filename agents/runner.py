@@ -8,10 +8,11 @@ from google.genai import types
 from tools.text_extraction import ExtractionText
 import logging
 from pathlib import Path
+
 logging.basicConfig(level=logging.INFO)
 
 
-prompt=ExtractionText(
+prompt = ExtractionText(
     username="kiwiiclaire",
     video_path="media/video1.mp4",
     description_path="description/description1.txt",
@@ -21,17 +22,22 @@ prompt=ExtractionText(
 ).run()["combined_text"]
 
 
+APP_NAME = "Info Dig"
+USER_ID = "user1234"
+SESSION_ID = "1234"
 
-APP_NAME="Info Dig"
-USER_ID="user1234"
-SESSION_ID="1234"
 
 # Session and Runner
 async def setup_session_and_runner():
     session_service = InMemorySessionService()
-    session = await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-    runner = Runner(agent=Overall_flow, app_name=APP_NAME, session_service=session_service)
+    session = await session_service.create_session(
+        app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID
+    )
+    runner = Runner(
+        agent=Overall_flow, app_name=APP_NAME, session_service=session_service
+    )
     return session, runner
+
 
 # Agent Interaction
 async def call_agent_async(query):
@@ -41,9 +47,11 @@ async def call_agent_async(query):
     # 1) Truncate file at the START of the run
     Path("findings.txt").write_text("", encoding="utf-8")
 
-    content = types.Content(role='user', parts=[types.Part(text=query)])
+    content = types.Content(role="user", parts=[types.Part(text=query)])
     session, runner = await setup_session_and_runner()
-    events = runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=content)
+    events = runner.run_async(
+        user_id=USER_ID, session_id=SESSION_ID, new_message=content
+    )
 
     try:
         async for event in events:
@@ -56,7 +64,3 @@ async def call_agent_async(query):
                     f.write(final_response + "\n\n---\n\n")
     except Exception as e:
         print(f"Error during agent execution: {str(e)}")
-
-
-
-asyncio.run(call_agent_async(prompt))

@@ -5,13 +5,16 @@ import certifi
 import subprocess
 import logging
 from pathlib import Path
+
 logging.basicConfig(level=logging.INFO)
 load_dotenv()
 
+
 class SpeechToText:
     """Transcribe from audio files."""
+
     def __init__(self):
-        os.environ['SSL_CERT_FILE'] = certifi.where()
+        os.environ["SSL_CERT_FILE"] = certifi.where()
         self.client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
     def transcribe_audio(self, audio_file_path, output):
@@ -21,12 +24,11 @@ class SpeechToText:
             myfile = self.client.files.upload(file=audio_file_path)
             print(f"Successfully uploaded file: {myfile.name}")
 
-            prompt = 'Generate a transcript of the speech.'
+            prompt = "Generate a transcript of the speech."
 
             # Process the audio file for transcription
             response = self.client.models.generate_content(
-                model='gemini-1.5-flash',
-                contents=[prompt, myfile]
+                model="gemini-1.5-flash", contents=[prompt, myfile]
             )
 
             # Save the transcript to a .txt file
@@ -42,13 +44,15 @@ class SpeechToText:
 
         finally:
             # Delete the remotely uploaded file
-            if 'myfile' in locals() and myfile:
+            if "myfile" in locals() and myfile:
                 print(f"Deleting remote file: {myfile.name}")
                 self.client.files.delete(name=myfile.name)
                 print("Remote file deleted.")
 
+
 class AudioExtractor:
     """Extract audio from video files."""
+
     def __init__(self):
         pass
 
@@ -58,25 +62,32 @@ class AudioExtractor:
 
         cmd = [
             "ffmpeg",
-            "-y",                 
-            "-i", video_file,
-            "-vn",                
-            "-ac", "1",          
-            "-ar", "16000",       
-            "-map", "0:a:0",     
-            "-f", "wav",          
-            "-acodec", "pcm_s16le",  
-            audio_file
+            "-y",
+            "-i",
+            video_file,
+            "-vn",
+            "-ac",
+            "1",
+            "-ar",
+            "16000",
+            "-map",
+            "0:a:0",
+            "-f",
+            "wav",
+            "-acodec",
+            "pcm_s16le",
+            audio_file,
         ]
         subprocess.run(cmd, check=True)
 
 
 class TextInput:
     """Combine all text input into a single string."""
+
     def __init__(self):
         self.text = ""
 
-    def input_text_prompt(self,username,description,transcript):
+    def input_text_prompt(self, username, description, transcript):
         # description="description/description1.txt"
         # transcript="description/output1.txt"
 
@@ -89,10 +100,17 @@ class TextInput:
         self.text = f"Tik Tok username: {username}, media description: {description_content}, transcript: {transcript_content}"
         return self.text
 
+
 class ExtractionText:
-    def __init__(self, username: str, video_path: str, description_path: str,
-                 out_prefix: str = "output1", audio_filename: str = "output1.wav",
-                 overwrite: bool = False):
+    def __init__(
+        self,
+        username: str,
+        video_path: str,
+        description_path: str,
+        out_prefix: str = "output1",
+        audio_filename: str = "output1.wav",
+        overwrite: bool = False,
+    ):
         self.username = username
         self.video_path = Path(video_path)
         self.description_path = Path(description_path)
@@ -137,4 +155,3 @@ class ExtractionText:
             "combined_path": str(combined_path),
             "combined_text": combined,
         }
-

@@ -4,7 +4,7 @@ from typing import List, Optional
 import ffmpeg
 from google.adk.agents import LlmAgent, SequentialAgent
 import google.genai.types as types
-from prompt import PROMPT_VISUAL_HINTS, PROMPT_HINT_RESEARCH, PROMPT_RISK_SUMMARY
+from .prompt import PROMPT_VISUAL_HINTS, PROMPT_HINT_RESEARCH, PROMPT_RISK_SUMMARY
 
 
 def extract_frames(video_path: str, output_dir: str, fps: int = 1) -> List[str]:
@@ -83,6 +83,12 @@ def prepare_parts_from_paths(
 
 
 class ImageSoftHintsAgent(LlmAgent):
+    image_path: Optional[str] = None
+    video_path: Optional[str] = None
+    fps: int = 1
+    max_frames: int = 8
+    tmp_dir: str = ".tmp_frames"
+
     def __init__(
         self,
         *,
@@ -91,13 +97,18 @@ class ImageSoftHintsAgent(LlmAgent):
         fps: int = 1,
         max_frames: int = 8,
         tmp_dir: str = ".tmp_frames",
+        **kwargs,  # Accept additional kwargs for the parent class
     ):
+        # Call parent __init__ with required parameters
         super().__init__(
-            name="ImageSoftHintsAgent",
+            name="ImageSoftHintsAgent",  # Provide the required name
             description="Extracts soft privacy signifiers from local images/frames (no PII).",
-            model="gemini-2.5-pro",
+            model="gemini-2.0-flash-exp",
             instruction=PROMPT_VISUAL_HINTS,
+            **kwargs,  # Pass any additional kwargs to parent
         )
+
+        # Store instance variables
         self.image_path = image_path
         self.video_path = video_path
         self.fps = fps
@@ -105,6 +116,8 @@ class ImageSoftHintsAgent(LlmAgent):
         self.tmp_dir = tmp_dir
 
     async def _build_input(self, ctx):
+        print("\n=== ImageSoftHintsAgent _build_input ===")
+
         parts = prepare_parts_from_paths(
             image_path=self.image_path,
             video_path=self.video_path,
@@ -112,14 +125,33 @@ class ImageSoftHintsAgent(LlmAgent):
             max_frames=self.max_frames,
             tmp_dir=self.tmp_dir,
         )
-        return [types.Part.from_text(text=PROMPT_VISUAL_HINTS), *parts]
+
+        # Debug output
+        print(f"Parts created: {len(parts)}")
+        for i, part in enumerate(parts):
+            if hasattr(part, "inline_data") and part.inline_data:
+                print(f"  Part {i}: Image ({part.inline_data.mime_type})")
+
+        return parts
 
     async def _postprocess_output(self, ctx, result):
+        print("\n=== ImageSoftHintsAgent _postprocess_output ===")
+        print(
+            f"Result preview: {result.text[:500] if hasattr(result, 'text') else 'No text'}..."
+        )
+
         try:
             data = json.loads(result.text)
-            ctx.session.state["visual_hints"] = data.get("hints", [])
-        except Exception:
-            ctx.session.state["visual_hints_raw"] = result.text
+            hints = data.get("hints", [])
+            ctx.session.state["visual_hints"] = hints
+            print(f"✅ Successfully parsed {len(hints)} hints")
+        except Exception as e:
+            print(f"❌ JSON parsing failed: {e}")
+            ctx.session.state["visual_hints_raw"] = (
+                result.text if hasattr(result, "text") else str(result)
+            )
+            ctx.session.state["visual_hints"] = []
+
         return result
 
 
@@ -164,6 +196,7 @@ class RiskSummaryAgent(LlmAgent):
             name="RiskSummaryAgent",
             description="Synthesizes research into overall privacy risk.",
             model="gemini-2.5-pro",
+            output_key="risk_summary",
             instruction=PROMPT_RISK_SUMMARY,
         )
 
@@ -192,8 +225,8 @@ def make_soft_hints_pipeline(
     image_path: Optional[str] = None,
     video_path: Optional[str] = None,
     fps: int = 1,
-    max_frames: int = 8,
-    tmp_dir: str = ".tmp_frames",
+    max_frames: int = 20,
+    tmp_dir: str = "tmp",
 ) -> SequentialAgent:
     return SequentialAgent(
         name="SoftHintPrivacyPipeline",
@@ -217,5 +250,5 @@ def make_soft_hints_pipeline(
 
 
 soft_hints_evaluator = make_soft_hints_pipeline(
-    image_path="../image.jpg", video_path="../video.mp4"
+    image_path=None, video_path="/Users/yashver/workspace/tiktoktechjam/video.mp4"
 )

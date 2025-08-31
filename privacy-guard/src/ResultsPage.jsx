@@ -56,15 +56,118 @@ function agentLabel(key) {
       return 'Reverse Image/Video Search';
     case 'censor':
       return 'Censoring Output';
+    case 'soft-hints':
+      return 'Soft Hints Analysis';
+    case 'media pii':
+      return 'Media PII Detection';
+    case 'web research':
+      return 'Web Research';
+    case 'SummaryAgent':
+      return 'Summary Agent';
     default:
-      return 'Agent Output';
+      return key || 'Agent Output';
   }
+}
+
+// Get risk color based on level
+function getRiskColor(risk) {
+  if (risk >= 70) return '#ff4757';
+  if (risk >= 40) return '#ffa502';
+  if (risk >= 20) return '#ffd93d';
+  return '#6bcf7f';
+}
+
+// JSON Renderer Component
+function JsonRenderer({ data, level = 0 }) {
+  const [collapsed, setCollapsed] = useState({});
+
+  const toggleCollapse = (key) => {
+    setCollapsed(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const renderValue = (value, key = '') => {
+    if (value === null) return <span style={{ color: '#ff79c6' }}>null</span>;
+    if (value === undefined) return <span style={{ color: '#ff79c6' }}>undefined</span>;
+
+    if (typeof value === 'boolean') {
+      return <span style={{ color: '#bd93f9' }}>{value.toString()}</span>;
+    }
+
+    if (typeof value === 'number') {
+      return <span style={{ color: '#50fa7b' }}>{value}</span>;
+    }
+
+    if (typeof value === 'string') {
+      return <span style={{ color: '#f1fa8c' }}>"{value}"</span>;
+    }
+
+    if (Array.isArray(value)) {
+      if (value.length === 0) return <span style={{ color: '#6272a4' }}>[]</span>;
+
+      const isCollapsed = collapsed[key];
+      return (
+        <span>
+          <span
+            onClick={() => toggleCollapse(key)}
+            style={{ cursor: 'pointer', color: '#8be9fd', userSelect: 'none' }}
+          >
+            [{isCollapsed ? '...' : ''}
+          </span>
+          {!isCollapsed && (
+            <div style={{ marginLeft: 20 }}>
+              {value.map((item, idx) => (
+                <div key={idx} style={{ marginTop: 4 }}>
+                  <span style={{ color: '#6272a4' }}>[{idx}]:</span> {renderValue(item, `${key}[${idx}]`)}
+                </div>
+              ))}
+            </div>
+          )}
+          {!isCollapsed && <span style={{ color: '#8be9fd' }}>]</span>}
+        </span>
+      );
+    }
+
+    if (typeof value === 'object') {
+      const entries = Object.entries(value);
+      if (entries.length === 0) return <span style={{ color: '#6272a4' }}>{'{}'}</span>;
+
+      const isCollapsed = collapsed[key];
+      return (
+        <span>
+          <span
+            onClick={() => toggleCollapse(key)}
+            style={{ cursor: 'pointer', color: '#ff79c6', userSelect: 'none' }}
+          >
+            {'{' + (isCollapsed ? '...' : '')}
+          </span>
+          {!isCollapsed && (
+            <div style={{ marginLeft: 20 }}>
+              {entries.map(([k, v], idx) => (
+                <div key={k} style={{ marginTop: 4 }}>
+                  <span style={{ color: '#8be9fd' }}>"{k}"</span>
+                  <span style={{ color: '#f8f8f2' }}>: </span>
+                  {renderValue(v, `${key}.${k}`)}
+                  {idx < entries.length - 1 && <span style={{ color: '#f8f8f2' }}>,</span>}
+                </div>
+              ))}
+            </div>
+          )}
+          {!isCollapsed && <span style={{ color: '#ff79c6' }}>{'}'}</span>}
+        </span>
+      );
+    }
+
+    return <span style={{ color: '#f8f8f2' }}>{String(value)}</span>;
+  };
+
+  return <div style={{ fontFamily: 'monospace', fontSize: 13 }}>{renderValue(data, 'root')}</div>;
 }
 
 export default function ResultsPage() {
   const { state } = useLocation();
   const navigate = useNavigate();
   const [uploaded, setUploaded] = useState(false);
+  const [showJsonView, setShowJsonView] = useState(false);
 
   if (!state || !state.report) {
     return (
@@ -85,17 +188,18 @@ export default function ResultsPage() {
   }
 
   const { report, photos = [], videos = [], username = '' } = state;
-  const { dangerScore = 0 } = report;
+
+  // Handle both possible structures
+  const dangerScore = report.dangerScore || report.risk || 0;
+  const artifacts = report.artifacts || [];
 
   // --- Actions ---
   const continueWithoutChanges = async () => {
-    // TODO: call your finalize-original endpoint here
-    setUploaded(true); // show overlay; clicking anywhere will navigate('/')
+    setUploaded(true);
   };
 
   const doNotUpload = async () => {
-    // TODO: optional: call a cancel endpoint
-    navigate('/'); // go back to first page
+    navigate('/');
   };
 
   const downloadReportJson = () => {
@@ -135,76 +239,208 @@ export default function ResultsPage() {
         </div>
 
         <div style={{ marginTop: 6, color: textMuted, fontSize: 13 }}>
-          We found {report.findings.length} issue{report.findings.length === 1 ? '' : 's'}.
+          We found {artifacts.length} issue{artifacts.length === 1 ? '' : 's'}.
         </div>
 
         <DangerMeter score={dangerScore} />
 
-        {/* Findings */}
-        <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
-          {report.findings.map((f, i) => {
-            const key = f.agent ?? f.type; // support both shapes
-            return (
-              <div key={`finding-${i}`} style={{ border: `1px solid ${line}`, borderRadius: 10, padding: 12 }}>
-                <div style={{ color: '#fff', fontWeight: 700, marginBottom: 4 }}>{agentLabel(key)}</div>
-                <div style={{ color: textMuted }}>{f.summary}</div>
-                <div style={{ marginTop: 6, fontSize: 12, color: '#fff' }}>Risk: {f.risk ?? 0}</div>
-              </div>
-            );
-          })}
+        {/* Toggle between views */}
+        <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => setShowJsonView(false)}
+            style={{
+              padding: '8px 16px',
+              background: !showJsonView ? tiktokCyan : '#222',
+              color: !showJsonView ? '#000' : '#fff',
+              border: `1px solid ${line}`,
+              borderRadius: 8,
+              fontWeight: 600,
+              transition: 'all 200ms ease'
+            }}
+          >
+            Summary View
+          </button>
+          <button
+            onClick={() => setShowJsonView(true)}
+            style={{
+              padding: '8px 16px',
+              background: showJsonView ? tiktokCyan : '#222',
+              color: showJsonView ? '#000' : '#fff',
+              border: `1px solid ${line}`,
+              borderRadius: 8,
+              fontWeight: 600,
+              transition: 'all 200ms ease'
+            }}
+          >
+            JSON View
+          </button>
         </div>
 
-        {/* Originals */}
-        {(photos.length > 0 || videos.length > 0) && (
+        {/* Content based on view */}
+        {!showJsonView ? (
           <>
-            <div style={{ color: '#fff', marginTop: 16, marginBottom: 6 }}>Original Media</div>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {photos.map((p, idx) => (
-                <img
-                  key={`orig-photo-${idx}`}
-                  src={URL.createObjectURL(p)}
-                  alt=""
-                  style={{ width: 100, height: 100, borderRadius: 8, objectFit: 'cover' }}
-                />
-              ))}
-              {videos.map((v, idx) => (
-                <video
-                  key={`orig-video-${idx}`}
-                  src={URL.createObjectURL(v)}
-                  controls
-                  style={{ width: 150, height: 100, borderRadius: 8, objectFit: 'cover' }}
-                />
-              ))}
-            </div>
+            {/* Summary from report if available */}
+            {report.summary && (
+              <div style={{
+                marginTop: 16,
+                padding: 16,
+                background: '#1a1a1a',
+                border: `1px solid ${line}`,
+                borderRadius: 10
+              }}>
+                <div style={{ color: tiktokCyan, fontWeight: 700, marginBottom: 8, fontSize: 16 }}>
+                  Overall Summary
+                </div>
+                <div style={{ color: '#fff', lineHeight: 1.6 }}>{report.summary}</div>
+                {report.status && (
+                  <div style={{ marginTop: 8, fontSize: 12 }}>
+                    <span style={{ color: textMuted }}>Status: </span>
+                    <span style={{
+                      color: report.status === 'done' ? '#6bcf7f' :
+                        report.status === 'error' ? '#ff4757' :
+                          '#ffa502'
+                    }}>
+                      {report.status}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Agent artifacts/findings */}
+            {artifacts.length > 0 && (
+              <>
+                <div style={{ color: '#fff', fontSize: 16, fontWeight: 700, marginTop: 20, marginBottom: 12 }}>
+                  Detailed Findings
+                </div>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {artifacts.map((f, i) => {
+                    const key = f.agent || f.type;
+                    const riskColor = getRiskColor(f.risk || 0);
+
+                    return (
+                      <div key={`finding-${i}`} style={{
+                        border: `1px solid ${line}`,
+                        borderRadius: 10,
+                        padding: 16,
+                        background: '#1a1a1a'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                          <div style={{ color: tiktokCyan, fontWeight: 700 }}>{agentLabel(key)}</div>
+                          <div style={{
+                            padding: '4px 12px',
+                            background: riskColor + '20',
+                            border: `1px solid ${riskColor}`,
+                            borderRadius: 6,
+                            fontSize: 12,
+                            color: riskColor,
+                            fontWeight: 600
+                          }}>
+                          </div>
+                        </div>
+                        <div style={{ color: '#fff', lineHeight: 1.5 }}>{f.summary}</div>
+
+                        {/* Show status if available */}
+                        {f.status && (
+                          <div style={{ marginTop: 8, fontSize: 12, color: textMuted }}>
+                            Status: {f.status}
+                          </div>
+                        )}
+
+                        {/* Show artifacts if any */}
+                        {f.artifacts && f.artifacts.length > 0 && (
+                          <div style={{ marginTop: 8 }}>
+                            <div style={{ fontSize: 12, color: textMuted, marginBottom: 4 }}>Artifacts:</div>
+                            {f.artifacts.map((artifact, idx) => (
+                              <div key={idx} style={{ fontSize: 12, color: tiktokCyan }}>
+                                • {artifact.label}
+                                {artifact.url && <span style={{ color: textMuted }}> ({artifact.url})</span>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Originals */}
+            {(photos.length > 0 || videos.length > 0) && (
+              <>
+                <div style={{ color: '#fff', marginTop: 20, marginBottom: 8, fontSize: 16, fontWeight: 700 }}>
+                  Original Media
+                </div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  {photos.map((p, idx) => (
+                    <img
+                      key={`orig-photo-${idx}`}
+                      src={URL.createObjectURL(p)}
+                      alt=""
+                      style={{ width: 100, height: 100, borderRadius: 8, objectFit: 'cover' }}
+                    />
+                  ))}
+                  {videos.map((v, idx) => (
+                    <video
+                      key={`orig-video-${idx}`}
+                      src={URL.createObjectURL(v)}
+                      controls
+                      style={{ width: 150, height: 100, borderRadius: 8, objectFit: 'cover' }}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Censored previews */}
+            {report.censoredMedia?.length > 0 && (
+              <>
+                <div style={{ color: '#fff', marginTop: 20, marginBottom: 8, fontSize: 16, fontWeight: 700 }}>
+                  Censored Previews
+                </div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  {report.censoredMedia.map((m) => (
+                    <img
+                      key={`censored-${m.id}`}
+                      src={m.url}
+                      alt={m.label}
+                      style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 8 }}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </>
+        ) : (
+          /* JSON View */
+          <div style={{
+            marginTop: 16,
+            padding: 16,
+            background: '#1a1a1a',
+            border: `1px solid ${line}`,
+            borderRadius: 10,
+            overflowX: 'auto'
+          }}>
+            <JsonRenderer data={report} />
+          </div>
         )}
 
-        {/* Censored previews (read-only) */}
-        {report.censoredMedia?.length > 0 && (
-          <>
-            <div style={{ color: '#fff', marginTop: 16, marginBottom: 6 }}>Censored Previews</div>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {report.censoredMedia.map((m) => (
-                <img
-                  key={`censored-${m.id}`}
-                  src={m.url}
-                  alt={m.label}
-                  style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 8 }}
-                />
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* Downloads */}
-        <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+        {/* Download button */}
+        <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
           <button
             onClick={downloadReportJson}
-            style={{ padding: 10, background: '#222', color: '#fff', border: `1px solid ${line}`, borderRadius: 10, fontWeight: 600 }}
+            style={{
+              padding: 10,
+              background: '#222',
+              color: '#fff',
+              border: `1px solid ${line}`,
+              borderRadius: 10,
+              fontWeight: 600
+            }}
           >
             Download Report (.json)
           </button>
-          {/* Removed: Download Agent Artifacts */}
         </div>
 
         {/* --- Sticky Decision Bar (2 buttons) --- */}
@@ -258,9 +494,8 @@ export default function ResultsPage() {
             </div>
           </div>
         )}
-        {/* --- End Sticky Decision Bar --- */}
 
-        {/* FULL-SCREEN "Uploaded!" OVERLAY – click anywhere to return home */}
+        {/* Upload complete overlay */}
         {uploaded && (
           <div
             onClick={() => navigate('/')}
@@ -284,10 +519,6 @@ export default function ResultsPage() {
             <div style={{ color: '#fff', fontSize: 28, fontWeight: 800, pointerEvents: 'none' }}>Uploaded!</div>
           </div>
         )}
-
-        <div style={{ color: textMuted, fontSize: 12, marginTop: 8 }}>
-          Tip: replace the mocked agent calls with your API endpoints.
-        </div>
       </div>
     </div>
   );

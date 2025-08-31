@@ -11,17 +11,14 @@ const textMuted = '#9ca3af';
 // --- helper: convert File -> base64 payload (JS version) ---
 const fileToB64 = (file) =>
   new Promise((resolve, reject) => {
+    if (!(file instanceof Blob)) {
+      return reject(new TypeError('Expected a File or Blob'));
+    }
     const reader = new FileReader();
     reader.onload = () => {
-      const result = reader.result; // "data:<mime>;base64,<...>"
-      const [header, b64] = String(result).split(',');
-      const match = header.match(/data:(.*?);base64/);
-      resolve({
-        data: b64,
-        filename: file.name,
-        content_type: match ? match[1] : file.type || 'application/octet-stream',
-        extension: (file.name.split('.').pop() || '').toLowerCase(),
-      });
+      const result = reader.result; // e.g. "data:video/mp4;base64,AAAA..."
+      const b64 = String(result).split(',')[1]; // take just the base64 part
+      resolve(b64); // return plain base64 string
     };
     reader.onerror = reject;
     reader.readAsDataURL(file);
@@ -56,34 +53,26 @@ export default function UploadPage() {
         alert('Please upload one image and one video');
         return;
       }
-      //COMMENT WHEN BE IS READY
-      const mockReport = {
-        findings: [{ type: 'mock', summary: 'Fake run, BE not ready', risk: 10 }],
-        dangerScore: 10,
-      };
-      navigate('/results', { state: { report: mockReport } });
-      return;
       // UNCOMMENT WHEN BE IS READY!!!
-      // const imagePayload = await fileToB64(image);
-      // const videoPayload = await fileToB64(video);
+      const videoPayload = await fileToB64(video);
 
-      // const payload = {
-      //   username: username.trim(),
-      //   text,
-      //   image: imagePayload,
-      //   video: videoPayload,
-      // };
+      const payload = {
+        username: username.trim(),
+        text,
+        video: videoPayload,
+        video_extension: 'mp4',
+      };
 
-      // const res = await fetch('http://localhost:8000/api/upload_json', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(payload),
-      // });
+      const res = await fetch('http://localhost:8000/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-      // if (!res.ok) throw new Error(await res.text());
-      // const report = await res.json();
+      if (!res.ok) throw new Error(await res.text());
+      const report = await res.json();
 
-      // navigate('/results', { state: { report } });
+      navigate('/results', { state: { report } });
     } finally {
       setBusy(false);
     }

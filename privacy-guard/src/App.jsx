@@ -1,7 +1,7 @@
 // ---------- Types ----------
 /** @typedef {Object} AgentOutput
  * @property {string} id
- * @property {('text-crawl'|'rev-search'|'censor')} agent
+ * @property {('soft-hints'|'media pii'|'web research')} agent
  * @property {string} summary
  * @property {number} risk // 0-100
  * @property {{label: string, url?: string}[]} artifacts // downloadable outputs

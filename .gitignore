@@ -11,3 +11,5 @@ venv/
 *.mp4
 *.MOV
 *.txt
+!requirements.txt
+
