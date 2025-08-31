@@ -27,13 +27,13 @@ Insert your tiktok username, description for the media and your media that you w
 For our agentic flow, we utilised google-adk for agentic workflows. We used a parallel agent to run the three agents, websearch agent, Media PII scan agent and OCR soft Hints agent, in parallel. Then we wrapped this parallel flow together with a summary agent to summarise all agent in a sequential flow agent. We did not utilise a "orchestrator agent" per say as the agent flow will more or less not change and we can fix the agent flow. 
 
 **websearch agent**
-Made up of multiple subagents found in (agents/websearch.py)[agents/websearch.py], it utilises google_search and url_context tool to search the internet for information that can be found based on the inputed description, username and the transcription of the video (extracted from video to audio to text using gemini)
+Made up of multiple subagents found in [agents/websearch.py](agents/websearch.py), it utilises google_search and url_context tool to search the internet for information that can be found based on the inputed description, username and the transcription of the video (extracted from video to audio to text using gemini)
 
 **Media PII scan agent**
-Utilises machine learning techniques in EasyOCR to detect PII data that the user might have unknowingly revealed in the media (video/image) such as location, etc and utilises gemini to summarise the detection (NOTE: PII DATA IS NOT SENT TO GEMINI, ONLY THE DETECTED CLASS AND CONFIDENCE SCORE). 
+Utilises machine learning techniques in EasyOCR to detect PII data that the user might have unknowingly revealed in the media (video/image) such as location, etc and utilises gemini to summarise the detection (NOTE: PII DATA IS NOT SENT TO GEMINI, ONLY THE DETECTED CLASS AND CONFIDENCE SCORE). This can be found in [agents/media_agent.py](agents/media_agent.py)
 
 **OCR soft hints agent**
-Made up of multiple subagents located in (agents/softhints.py)[agents/softhints.py], it first detects potential data such as location, etc. Then, it utilises google_search and url_context tool to search for related content to identify (if possible) data about the user (e.g location)
+Made up of multiple subagents located in [agents/softhints.py](agents/softhints.py), it first detects potential data such as location, etc. Then, it utilises google_search and url_context tool to search for related content to identify (if possible) data about the user (e.g location)
 
 All three agents are utilised as a form of privacy investigators, meant to find dangerous information that can be detected from uploading their media and/or their social media platforms. They act as a red-teamer to try and attack then INFORM the users about their liabilities.
 
