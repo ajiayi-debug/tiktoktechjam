@@ -138,20 +138,26 @@ async def privacy_handler(payload: UploadModel):
 
     with open("findings.txt", "w", encoding="utf-8") as f:
         f.write("")
-
+        
+    bool_video = False
     if payload.video is not None and payload.video_extension is not None:
         validate_extension(payload.video_extension, "video")
         save_file(payload.video, f"video.{payload.video_extension}")
+        media_path_to_analyze = f"video.{payload.video_extension}"
+        bool_video = True
 
     if payload.image is not None and payload.image_extension is not None:
         validate_extension(payload.image_extension, "image")
         save_file(payload.image, f"image.{payload.image_extension}")
+        media_path_to_analyze = f"image.{payload.image_extension}"
 
     if payload.text is not None:
         with open("description.txt", "w") as file:
             file.write(payload.text)
 
-    prompt = generate_text_extraction_prompt(video=True, username=payload.username)
+    prompt = generate_text_extraction_prompt(video=bool_video, username=payload.username)
+
+    prompt = prompt + "media_path:" + media_path_to_analyze
 
     content = types.Content(role="user", parts=[types.Part(text=prompt)])
 

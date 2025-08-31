@@ -22,6 +22,8 @@ prompt = ExtractionText(
 ).run()["combined_text"]
 
 
+
+
 APP_NAME = "Info Dig"
 USER_ID = "user1234"
 SESSION_ID = "1234"
