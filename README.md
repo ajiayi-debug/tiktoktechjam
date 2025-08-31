@@ -1,5 +1,7 @@
 # Using AI for Privacy: Informing users of their liabilities using AI
 
+Watch our solution come to life [here!](https://youtu.be/IzMlzDHbbfo)
+
 ## Problem Statement
 As generative AI becomes increasingly embedded in daily life, risks of privacy loss grow. Malicious actors exploit AI to harvest personal data, create deepfakes, or mount identity-based attacks, while ordinary AI use can also expose sensitive information through prompts, uploads, or digital traces. To safeguard users, there is a pressing need to leverage AI itself as a protective layer—detecting, preventing, and mitigating privacy breaches. This includes building tools that automatically identify and redact personal identifiers, monitor for potential data leakage, and defend against misuse of online content, enabling safer digital participation in an AI-driven world.
 
