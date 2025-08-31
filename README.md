@@ -10,5 +10,58 @@ Instead of directly harvesting or leaking information, our solution acts as a pr
 
 This approach transforms generative AI from a threat into a safeguard — using the same power that enables privacy attacks to instead defend and educate users about their digital footprint.
 
+## Steps to Run 
+
+### 🚀 How to Run
+
+### 1. Backend (FastAPI)
+
+You need **Python 3.12** or [`uv`](https://github.com/astral-sh/uv).
+
+**Option A – using `uv` (recommended):**
+```bash
+# install dependencies
+uv sync
+
+# start backend
+uv run fastapi dev recieve_media.py
+```
+
+**Option B – using plain Python/pip:**
+```bash
+# create & activate virtual environment
+python3.12 -m venv .venv
+source .venv/bin/activate   # on Windows: .venv\Scripts\activate
+
+# install dependencies
+pip install -r requirements.txt
+
+# start backend
+fastapi dev recieve_media.py
+```
+
+This runs the API server at **http://localhost:8000**.
+
+---
+
+### 2. Frontend (React + Vite)
+
+```bash
+cd privacy-guard
+npm install
+npm run dev
+```
+
+This runs the frontend at **http://localhost:5173** (by default).
+
+---
+
+### ✅ You’re all set
+
+- Backend → http://localhost:8000  
+- Frontend → http://localhost:5173  
+
+Open the frontend in your browser — it will connect to the FastAPI backend automatically.
+
 ## Architecture
 <img width="933" height="599" alt="Screenshot 2025-08-30 at 12 36 42 PM" src="https://github.com/user-attachments/assets/0c6099b2-b302-491a-949d-2261f9be0968" />
