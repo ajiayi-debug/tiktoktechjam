@@ -14,31 +14,116 @@ from google.protobuf import struct_pb2
 logging.basicConfig(level=logging.INFO)
 
 
-def extract_json_from_text(text):
-    patterns = [
-        r"```javascript\s*(\{.*?\})\s*```",  # JavaScript code block
-    ]
+# def extract_json_from_text(text):
+#     patterns = [
+#         r"```javascript\s*(\{.*?\})\s*```",  # JavaScript code block
+#     ]
 
-    for pattern in patterns:
-        match = re.search(pattern, text, re.DOTALL)
-        if match:
-            try:
-                return json.loads(match.group(1))
-            except json.JSONDecodeError:
-                continue
+#     for pattern in patterns:
+#         match = re.search(pattern, text, re.DOTALL)
+#         if match:
+#             try:
+#                 return json.loads(match.group(1))
+#             except json.JSONDecodeError:
+#                 continue
 
-    json_pattern = r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}"
-    matches = re.findall(json_pattern, text)
+#     json_pattern = r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}"
+#     matches = re.findall(json_pattern, text)
 
-    # Try parsing from the last match (most likely to be the summary)
-    for match in reversed(matches):
+#     # Try parsing from the last match (most likely to be the summary)
+#     for match in reversed(matches):
+#         try:
+#             parsed = json.loads(match)
+#             # Verify it looks like the expected output
+#             if "id" in parsed or "agent" in parsed or "summary" in parsed:
+#                 return parsed
+#         except json.JSONDecodeError:
+#             continue
+
+#     return None
+
+import json, re, ast
+
+def _try_parse_obj(s: str):
+    # strict JSON first
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError:
+        pass
+    # tolerate single quotes / Python dicts
+    try:
+        val = ast.literal_eval(s)
+        if isinstance(val, dict):
+            json.dumps(val)  # ensure JSON-serializable
+            return val
+    except Exception:
+        pass
+    # normalize smart quotes and retry
+    s2 = (s.replace("“", '"').replace("”", '"')
+            .replace("‘", "'").replace("’", "'"))
+    if s2 != s:
         try:
-            parsed = json.loads(match)
-            # Verify it looks like the expected output
-            if "id" in parsed or "agent" in parsed or "summary" in parsed:
+            return json.loads(s2)
+        except Exception:
+            try:
+                val = ast.literal_eval(s2)
+                if isinstance(val, dict):
+                    json.dumps(val)
+                    return val
+            except Exception:
+                pass
+    return None
+
+def _find_last_balanced_object(text: str):
+    """Return the last top-level {...} block, ignoring braces inside double-quoted strings."""
+    in_str = False
+    esc = False
+    depth = 0
+    start = None
+    last_obj = None
+    for i, ch in enumerate(text):
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == '\\':
+                esc = True
+            elif ch == '"':
+                in_str = False
+        else:
+            if ch == '"':
+                in_str = True
+            elif ch == '{':
+                if depth == 0:
+                    start = i
+                depth += 1
+            elif ch == '}':
+                if depth > 0:
+                    depth -= 1
+                    if depth == 0 and start is not None:
+                        last_obj = text[start:i+1]
+                        start = None
+    return last_obj
+
+def extract_json_from_text(text: str):
+    if not text:
+        return None
+
+    # 1) Any fenced block (json/javascript/none). Capture WHOLE block, not just {…}
+    fence_re = re.compile(r"```(?:json|javascript)?\s*([\s\S]*?)\s*```", re.IGNORECASE)
+    fenced_blocks = fence_re.findall(text)
+    for block in reversed(fenced_blocks):  # prefer the last fenced block
+        candidate = _find_last_balanced_object(block)
+        if candidate:
+            parsed = _try_parse_obj(candidate.strip())
+            if isinstance(parsed, dict):
                 return parsed
-        except json.JSONDecodeError:
-            continue
+
+    # 2) Fallback: scan the entire text for the last balanced JSON object
+    candidate = _find_last_balanced_object(text)
+    if candidate:
+        parsed = _try_parse_obj(candidate.strip())
+        if isinstance(parsed, dict):
+            return parsed
 
     return None
 

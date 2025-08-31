@@ -210,26 +210,33 @@ into a comprehensive report.
 
 The following information are gathered:
 WebSearchAgent:
-1. Report found from websearch: {final_websearch_report}
-2. Evidence for report: {supporting_evidence}
+1. Report found from websearch: {final_websearch_report} and evidence for websearch report: {supporting_evidence}
 Goal of websearch agent: To gather as much information about the user as possible from searching the web. The inputs are usually a description of uploaded media (if any), transcription of their media (if any) and their username.
-3. Media PII Scan Report: {pii_report}
-The Media PII Scan Report would return a json, pay attention to the Summary portin which has the key risk_level aaswell as recommendations these are the key statistics that you will be using to make your judgement.
-4. Perform a soft hints evaluation using {risk_summary}
+2. Media PII Scan Report: {pii_report}
+Goal of Media PII Scan agent: The Media PII Scan Report would return a json, pay attention to the Summary portin which has the key risk_level aaswell as recommendations these are the key statistics that you will be using to make your judgement.
+3. OCR Soft Hints: {risk_summary}
+Goal of OCR Soft Hints agent: The OCR Soft Hints Report would identify potential soft signifiers in the media that could help an attacker narrow down location or identity. Searches the web for actual identifiable location and identity as well.
 
 
-Output a score, detailed report of findings and finally advise to the user.
+Output a score, detailed report of findings and finally advise to the user based on ALL 3 AGENTS
 
-Then output the score in the following javascript object form
+Then output the results in the following javascript object form
 
 /** @typedef Object AgentOutput
  * @property string id
- * @property ('soft-hints'|'media pii'|'web research') agent
- * @property string summary
+ * @property ('soft-hints'|'media pii'|'web research') agent (use all 3 as much as possible)
+ * @property string summary 
  * @property number risk // 0-100
- * @property label: string, url?: string}[] artifacts // downloadable outputs
+ * @property label: string, url?: string}[] artifacts // downloadable outputs (e.g websites found, what was detected by OCR, etc)
  * @property ('queued'|'running'|'done'|'error') status
 */
+
+Make sure the summary is AS DETAILED AS POSSIBLE which INCLUDE specific examples, evidence, and ACTIONABLE RECOMMENDATIONS. 
+Output ONLY a single JSON object (do not wrap it in an array).
+Enclose the JSON in a fenced code block like:
+
+```javascript
+{ ...single object here... }
 
 """
 
@@ -259,7 +266,7 @@ PROMPT_HINT_RESEARCH = """
 You are a web researcher. For each hint (name, description, retrieval_terms),
 assess how easily it could lead to a precise place or small area *in general*.
 Consider distinctiveness, prior online coverage (e.g., iconic murals/landmarks),
-and likely reverse-image-searchability.
+and likely reverse-image-searchability. Use the google_search tool and url_context tool to help you.
 
 For EACH hint, output:
 - name

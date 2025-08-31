@@ -77,6 +77,101 @@ function getRiskColor(risk) {
   return '#6bcf7f';
 }
 
+function isDataUrl(u) {
+  return typeof u === 'string' && u.startsWith('data:');
+}
+function decodeDataUrl(u) {
+  // data:mime;base64,AAAA...
+  try {
+    const [, meta, b64] = u.match(/^data:([^;]+);base64,(.*)$/) || [];
+    if (!b64) return { mime: '', text: '' };
+    const text = atob(b64);
+    return { mime: meta || '', text };
+  } catch {
+    return { mime: '', text: '' };
+  }
+}
+
+function ArtifactView({ item }) {
+  // string artifact
+  if (typeof item === 'string') {
+    return <div style={{ color: '#fff', whiteSpace: 'pre-wrap' }}>{item}</div>;
+  }
+
+  // object artifact
+  if (item && typeof item === 'object') {
+    const label = item.label ?? 'Artifact';
+    const url = item.url;
+
+    // data: URL -> small inline preview if it's text/*
+    if (isDataUrl(url)) {
+      const { mime, text } = decodeDataUrl(url);
+      const isText = mime.startsWith('text/');
+      return (
+        <div>
+          <div style={{ color: '#fff', fontWeight: 600 }}>{label}</div>
+          <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 6 }}>{mime || 'data'}</div>
+          {isText ? (
+            <pre
+              style={{
+                background: '#111',
+                border: '1px solid #2a2a2a',
+                borderRadius: 8,
+                padding: 10,
+                color: '#ddd',
+                maxHeight: 220,
+                overflow: 'auto',
+                margin: 0,
+              }}
+            >
+              {text}
+            </pre>
+          ) : (
+            <div style={{ color: '#9ca3af' }}>
+              (Binary data preview not shown)
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // http(s) link or no link
+    return (
+      <div>
+        <div style={{ color: '#fff' }}>{label}</div>
+        {url ? (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#25F4EE', fontSize: 12, wordBreak: 'break-all' }}
+          >
+            {url}
+          </a>
+        ) : (
+          <div style={{ color: '#9ca3af', fontSize: 12 }}>(no link)</div>
+        )}
+      </div>
+    );
+  }
+
+  // anything else
+  return (
+    <pre
+      style={{
+        background: '#111',
+        border: '1px solid #2a2a2a',
+        borderRadius: 8,
+        padding: 10,
+        color: '#ddd',
+        margin: 0,
+      }}
+    >
+      {JSON.stringify(item, null, 2)}
+    </pre>
+  );
+}
+
 // JSON Renderer Component
 function JsonRenderer({ data, level = 0 }) {
   const [collapsed, setCollapsed] = useState({});
@@ -190,8 +285,20 @@ export default function ResultsPage() {
   const { report, photos = [], videos = [], username = '' } = state;
 
   // Handle both possible structures
-  const dangerScore = report.dangerScore || report.risk || 0;
-  const artifacts = report.artifacts || [];
+  const dangerScore = report.dangerScore ?? report.risk ?? 0;
+  const artifacts = Array.isArray(report.artifacts) ? report.artifacts : [];
+
+  // Build a normalized findings array.
+  // If BE didn’t send report.findings, synthesize one from top-level fields.
+  const findings = Array.isArray(report.findings) && report.findings.length
+    ? report.findings
+    : [{
+        agent: report.agent, // can be string or array
+        summary: report.detailed_summary || report.summary || '',
+        risk: report.risk ?? dangerScore,
+        status: report.status,
+        artifacts: artifacts
+      }];
 
   // --- Actions ---
   const continueWithoutChanges = async () => {
@@ -239,7 +346,12 @@ export default function ResultsPage() {
         </div>
 
         <div style={{ marginTop: 6, color: textMuted, fontSize: 13 }}>
-          We found {artifacts.length} issue{artifacts.length === 1 ? '' : 's'}.
+          Overall risk: <span style={{ color: '#fff' }}>{dangerScore}</span>
+          {Array.isArray(report.agent) && report.agent.length ? (
+            <> · Agents: <span style={{ color: '#fff' }}>{report.agent.join(', ')}</span></>
+          ) : report.agent ? (
+            <> · Agent: <span style={{ color: '#fff' }}>{String(report.agent)}</span></>
+          ) : null}
         </div>
 
         <DangerMeter score={dangerScore} />
@@ -314,54 +426,39 @@ export default function ResultsPage() {
                   Detailed Findings
                 </div>
                 <div style={{ display: 'grid', gap: 8 }}>
-                  {artifacts.map((f, i) => {
-                    const key = f.agent || f.type;
-                    const riskColor = getRiskColor(f.risk || 0);
-
-                    return (
-                      <div key={`finding-${i}`} style={{
+                  {artifacts.map((art, i) => (
+                    <div
+                      key={`artifact-${i}`}
+                      style={{
                         border: `1px solid ${line}`,
                         borderRadius: 10,
                         padding: 16,
-                        background: '#1a1a1a'
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                          <div style={{ color: tiktokCyan, fontWeight: 700 }}>{agentLabel(key)}</div>
-                          <div style={{
+                        background: '#1a1a1a',
+                        display: 'grid',
+                        gap: 8,
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ color: tiktokCyan, fontWeight: 700 }}>Agent Output</div>
+                        {/* optional chip if you want a neutral pill */}
+                        <div
+                          style={{
                             padding: '4px 12px',
-                            background: riskColor + '20',
-                            border: `1px solid ${riskColor}`,
+                            background: '#2a2a2a',
+                            border: `1px solid ${line}`,
                             borderRadius: 6,
                             fontSize: 12,
-                            color: riskColor,
-                            fontWeight: 600
-                          }}>
-                          </div>
+                            color: '#9ca3af',
+                            fontWeight: 600,
+                          }}
+                        >
+                          artifact #{i + 1}
                         </div>
-                        <div style={{ color: '#fff', lineHeight: 1.5 }}>{f.summary}</div>
-
-                        {/* Show status if available */}
-                        {f.status && (
-                          <div style={{ marginTop: 8, fontSize: 12, color: textMuted }}>
-                            Status: {f.status}
-                          </div>
-                        )}
-
-                        {/* Show artifacts if any */}
-                        {f.artifacts && f.artifacts.length > 0 && (
-                          <div style={{ marginTop: 8 }}>
-                            <div style={{ fontSize: 12, color: textMuted, marginBottom: 4 }}>Artifacts:</div>
-                            {f.artifacts.map((artifact, idx) => (
-                              <div key={idx} style={{ fontSize: 12, color: tiktokCyan }}>
-                                • {artifact.label}
-                                {artifact.url && <span style={{ color: textMuted }}> ({artifact.url})</span>}
-                              </div>
-                            ))}
-                          </div>
-                        )}
                       </div>
-                    );
-                  })}
+
+                      <ArtifactView item={art} />
+                    </div>
+                  ))}
                 </div>
               </>
             )}

@@ -2,6 +2,7 @@ import os
 import json
 from typing import List, Optional
 import ffmpeg
+from google.adk.tools import google_search, url_context
 from google.adk.agents import LlmAgent, SequentialAgent
 import google.genai.types as types
 from .prompt import PROMPT_VISUAL_HINTS, PROMPT_HINT_RESEARCH, PROMPT_RISK_SUMMARY
@@ -198,6 +199,7 @@ class RiskSummaryAgent(LlmAgent):
             model="gemini-2.5-pro",
             output_key="risk_summary",
             instruction=PROMPT_RISK_SUMMARY,
+            tools=[google_search, url_context],
         )
 
     async def _build_input(self, ctx):

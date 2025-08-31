@@ -136,6 +136,9 @@ async def privacy_handler(payload: UploadModel):
     print(f"Recieved artifacts from {payload.username}")
     print(f"text:\n {payload.text}")
 
+    with open("findings.txt", "w", encoding="utf-8") as f:
+        f.write("")
+
     if payload.video is not None and payload.video_extension is not None:
         validate_extension(payload.video_extension, "video")
         save_file(payload.video, f"video.{payload.video_extension}")
