@@ -20,7 +20,9 @@ This solution has the assumption that the user is *just* about ready to upload t
 
 **Media uploaded**
 
-![output](https://github.com/user-attachments/assets/55b991e1-7670-4c6d-9bcc-c99c1fad166a)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/55b991e1-7670-4c6d-9bcc-c99c1fad166a" alt="output" />
+</p>
 
 **Inputs**
 
