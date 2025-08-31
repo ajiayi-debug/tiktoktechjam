@@ -16,8 +16,15 @@ This approach transforms generative AI from a threat into a safeguard — using 
 To walk through our website usage, we shall use a real tiktok account @koji.and.yuki (owned by one of our team mates). This is to show the real impact that our agents connecting to the internet have. 
 This solution has the assumption that the user is *just* about ready to upload their media (after editing, etc) and agree to the privacy terms when it comes to media upload of social media platforms such as tiktok.
 
-<img width="1000" height="781" alt="Screenshot 2025-08-31 at 6 06 35 PM" src="https://github.com/user-attachments/assets/94532631-21a4-4f27-ab32-987ddca6d7dc" />
+### Frontend Initial Input
 
+**Media uploaded**
+
+![output](https://github.com/user-attachments/assets/55b991e1-7670-4c6d-9bcc-c99c1fad166a)
+
+**Inputs**
+
+<img width="1000" height="781" alt="Screenshot 2025-08-31 at 6 06 35 PM" src="https://github.com/user-attachments/assets/94532631-21a4-4f27-ab32-987ddca6d7dc" />
 
 Insert your tiktok username, description for the media and your media that you will like to upload. Currently, we only support single video and image, but plan to scale to multi video and images in future. When you are ready, press analyze to start the agentic flow.
 
