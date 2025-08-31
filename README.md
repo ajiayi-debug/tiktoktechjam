@@ -31,6 +31,8 @@ Insert your tiktok username, description for the media and your media that you w
 ### Backend agentic flow
 <img width="933" height="599" alt="Screenshot 2025-08-30 at 12 36 42 PM" src="https://github.com/user-attachments/assets/0c6099b2-b302-491a-949d-2261f9be0968" />
 
+Note: We initially wanted to mimic social media platform's uploading utilities on Lynx, but due to a lack of time, we reverted to a react based webpage instead.
+
 For our agentic flow, we utilised google-adk for agentic workflows. We used a parallel agent to run the three agents, websearch agent, Media PII scan agent and OCR soft Hints agent, in parallel. Then we wrapped this parallel flow together with a summary agent to summarise all agent in a sequential flow agent. We did not utilise a "orchestrator agent" per say as the agent flow will more or less not change and we can fix the agent flow. 
 
 **websearch agent**
